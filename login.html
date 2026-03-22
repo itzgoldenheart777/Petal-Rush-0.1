@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#e91e8c"/>
+  <title>Sign In — Petal Rush 🌸</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+  <style>
+    body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #fff0f6, #f0fff4, #fff0f6); padding: 24px; }
+    body.dark { background: linear-gradient(135deg, #1a0a1a, #0a1a0a, #1a0a1a); }
+    .auth-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 0; max-width: 900px; width: 100%; background: var(--surface); border-radius: 24px; overflow: hidden; box-shadow: var(--shadow-lg); }
+    .auth-art {
+      background: linear-gradient(135deg, var(--pink), var(--pink-dark) 40%, var(--green) 80%, var(--green-dark));
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      color: white;
+    }
+    .auth-art h1 { font-family: 'Playfair Display', serif; font-size: 40px; font-weight: 900; margin-bottom: 16px; line-height: 1.2; }
+    .auth-art p { opacity: .85; font-size: 15px; line-height: 1.7; margin-bottom: 32px; }
+    .auth-art .art-flowers { font-size: 60px; margin-bottom: 24px; }
+    .auth-art .perks { display: flex; flex-direction: column; gap: 12px; }
+    .auth-art .perk { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
+    .auth-form { padding: 48px 40px; overflow-y: auto; max-height: 100vh; }
+    .auth-tabs { display: flex; border: 2px solid var(--border); border-radius: 50px; padding: 4px; margin-bottom: 32px; gap: 4px; }
+    .auth-tab { flex: 1; padding: 10px; border-radius: 50px; border: none; background: none; font-weight: 700; font-size: 14px; color: var(--text2); cursor: pointer; transition: all var(--transition); }
+    .auth-tab.active { background: var(--pink); color: white; box-shadow: 0 4px 16px rgba(233,30,140,.3); }
+    .auth-section { display: none; }
+    .auth-section.active { display: block; }
+    .role-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+    .role-card-sm {
+      padding: 14px 12px;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .role-card-sm:hover, .role-card-sm.selected { border-color: var(--pink); background: var(--pink-light); color: var(--pink); }
+    .role-card-sm .role-em { font-size: 24px; display: block; margin-bottom: 4px; }
+    .method-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .method-tab { flex: 1; padding: 8px; border: 2px solid var(--border); border-radius: var(--radius-sm); text-align: center; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text2); transition: all var(--transition); }
+    .method-tab.active { border-color: var(--pink); color: var(--pink); background: var(--pink-light); }
+    .err-msg { background: #fee2e2; color: #dc2626; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; margin-bottom: 16px; display: none; }
+    .err-msg.show { display: block; }
+    .divider { text-align: center; margin: 20px 0; color: var(--text3); font-size: 13px; position: relative; }
+    .divider::before, .divider::after { content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: var(--border); }
+    .divider::before { left: 0; } .divider::after { right: 0; }
+    @media (max-width: 768px) { .auth-wrap { grid-template-columns: 1fr; } .auth-art { padding: 32px; } .auth-art { display: none; } .auth-form { padding: 32px 24px; } }
+  </style>
+</head>
+<body>
+  <div style="position:fixed;top:16px;right:16px;z-index:99;">
+    <button onclick="toggleDarkMode()" class="btn btn-ghost btn-sm"><span class="dark-toggle-icon">🌙</span></button>
+  </div>
+
+  <div class="auth-wrap">
+    <!-- Art Panel -->
+    <div class="auth-art">
+      <div class="art-flowers">🌸💐🌹</div>
+      <h1>Welcome to Petal Rush</h1>
+      <p>India's freshest flower marketplace. Connect buyers, sellers, and delivery partners in one beautiful platform.</p>
+      <div class="perks">
+        <div class="perk">✅ 100+ verified flower sellers</div>
+        <div class="perk">🚴 Fast delivery tracking</div>
+        <div class="perk">💰 Transparent payouts — 85/10/5</div>
+        <div class="perk">🔐 Secure QR-based delivery</div>
+        <div class="perk">📱 Works offline as a PWA</div>
+      </div>
+    </div>
+
+    <!-- Form Panel -->
+    <div class="auth-form">
+      <a href="index.html" style="font-family:'Playfair Display',serif;font-size:22px;font-weight:900;background:linear-gradient(135deg,var(--pink),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block;margin-bottom:24px;">🌸 Petal Rush</a>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchTab('login')">Sign In</button>
+        <button class="auth-tab" onclick="switchTab('register')">Create Account</button>
+      </div>
+
+      <!-- SIGN IN -->
+      <div class="auth-section active" id="section-login">
+        <div class="err-msg" id="login-err"></div>
+        <div class="method-tabs">
+          <div class="method-tab active" onclick="setMethod('password')" id="method-password">🔑 Password</div>
+          <div class="method-tab" onclick="setMethod('otp')" id="method-otp">📱 OTP</div>
+        </div>
+
+        <!-- Password Login -->
+        <div id="login-password">
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="login-email" placeholder="you@email.com" autocomplete="email"/>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+          </div>
+          <button class="btn btn-primary btn-full mt-16" onclick="doLogin()" id="login-btn">Sign In 🌸</button>
+          <div class="divider">or</div>
+          <button class="btn btn-ghost btn-full" onclick="openModal('forgot-modal')">Forgot password?</button>
+        </div>
+
+        <!-- OTP Login (demo) -->
+        <div id="login-otp" style="display:none;">
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" id="otp-phone" placeholder="+91 98765 43210"/>
+          </div>
+          <div id="otp-step-1">
+            <button class="btn btn-primary btn-full" onclick="sendOTP()">Send OTP 📱</button>
+          </div>
+          <div id="otp-step-2" style="display:none;">
+            <label style="margin-bottom:12px;display:block;text-align:center;">Enter 6-digit OTP</label>
+            <div class="otp-inputs">
+              <input class="otp-input" maxlength="1" id="o0" oninput="otpFwd(this,'o1')"/>
+              <input class="otp-input" maxlength="1" id="o1" oninput="otpFwd(this,'o2')"/>
+              <input class="otp-input" maxlength="1" id="o2" oninput="otpFwd(this,'o3')"/>
+              <input class="otp-input" maxlength="1" id="o3" oninput="otpFwd(this,'o4')"/>
+              <input class="otp-input" maxlength="1" id="o4" oninput="otpFwd(this,'o5')"/>
+              <input class="otp-input" maxlength="1" id="o5" oninput="if(this.value.length===1)verifyOTPLogin()"/>
+            </div>
+            <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--text3);">Check console for demo OTP</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- REGISTER -->
+      <div class="auth-section" id="section-register">
+        <p style="font-size:13px;color:var(--text2);margin-bottom:20px;">Choose your role to get started</p>
+        <div class="role-grid">
+          <div class="role-card-sm" onclick="pickRole(this,'buyer')" data-role="buyer">
+            <span class="role-em">🛒</span>Buyer
+          </div>
+          <div class="role-card-sm" onclick="pickRole(this,'seller')" data-role="seller">
+            <span class="role-em">🏪</span>Seller
+          </div>
+          <div class="role-card-sm" onclick="pickRole(this,'delivery')" data-role="delivery">
+            <span class="role-em">🚴</span>Delivery
+          </div>
+          <div class="role-card-sm" onclick="pickRole(this,'admin')" data-role="admin">
+            <span class="role-em">👑</span>Admin
+          </div>
+        </div>
+        <div class="err-msg" id="reg-err"></div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="reg-name" placeholder="Your Name"/>
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" id="reg-phone" placeholder="+91 98765 43210"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="reg-email" placeholder="you@email.com"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="reg-pass" placeholder="Min 6 characters"/>
+          </div>
+          <div class="form-group">
+            <label>Confirm Password</label>
+            <input type="password" id="reg-pass2" placeholder="Repeat password"/>
+          </div>
+        </div>
+        <div id="seller-note" style="display:none;background:var(--pink-light);border:1px solid var(--pink);padding:12px;border-radius:var(--radius-sm);font-size:13px;color:var(--pink-dark);margin-bottom:16px;">
+          ⚠️ Seller accounts require admin approval before you can list products.
+        </div>
+        <button class="btn btn-primary btn-full mt-16" onclick="doRegister()" id="reg-btn">Create Account 🌸</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Forgot Password Modal -->
+  <div class="modal" id="forgot-modal">
+    <div class="modal-box" style="max-width:400px;">
+      <div class="modal-header">
+        <span class="modal-title">Reset Password</span>
+        <button class="modal-close" onclick="closeModal('forgot-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" id="forgot-email" placeholder="you@email.com"/>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="sendReset()">Send Reset Link 📧</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/shared.js"></script>
+  <script>
+    let selectedRole = 'buyer';
+    let generatedOTP = null;
+    let otpEmail = null;
+
+    // Pre-select from URL
+    window.addEventListener('DOMContentLoaded', () => {
+      const p = new URLSearchParams(location.search);
+      if (p.get('tab') === 'register') switchTab('register');
+      if (p.get('role')) {
+        const card = document.querySelector(`[data-role="${p.get('role')}"]`);
+        if (card) pickRole(card, p.get('role'));
+      }
+      initDarkMode();
+    });
+
+    function switchTab(t) {
+      document.querySelectorAll('.auth-tab').forEach((el,i) => el.classList.toggle('active', (i===0&&t==='login')||(i===1&&t==='register')));
+      document.getElementById('section-login').classList.toggle('active', t==='login');
+      document.getElementById('section-register').classList.toggle('active', t==='register');
+    }
+
+    function setMethod(m) {
+      document.querySelectorAll('.method-tab').forEach(el => el.classList.remove('active'));
+      document.getElementById(`method-${m}`).classList.add('active');
+      document.getElementById('login-password').style.display = m==='password' ? 'block' : 'none';
+      document.getElementById('login-otp').style.display = m==='otp' ? 'block' : 'none';
+    }
+
+    function pickRole(el, role) {
+      selectedRole = role;
+      document.querySelectorAll('.role-card-sm').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('seller-note').style.display = role==='seller' ? 'block' : 'none';
+    }
+
+    function showErr(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 5000);
+    }
+
+    function friendlyErr(code) {
+      const m = {
+        'invalid_credentials': 'Invalid email or password.',
+        'user_not_found': 'No account found with this email.',
+        'email_not_confirmed': 'Please verify your email first.',
+        'weak_password': 'Password must be at least 6 characters.',
+        'email_address_invalid': 'Please enter a valid email.',
+        'user_already_exists': 'An account with this email already exists.'
+      };
+      return m[code] || 'Something went wrong. Please try again.';
+    }
+
+    async function doLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-pass').value;
+      if (!email || !pass) { showErr('login-err', 'Please fill all fields'); return; }
+      const btn = document.getElementById('login-btn');
+      btn.textContent = 'Signing in...'; btn.disabled = true;
+      const { data, error } = await _supabase.auth.signInWithPassword({ email, password: pass });
+      if (error) { showErr('login-err', friendlyErr(error.message)); btn.textContent='Sign In 🌸'; btn.disabled=false; return; }
+      const profile = await getUserData(data.user.id);
+      if (profile?.status === 'suspended') {
+        showErr('login-err', 'Your account has been suspended. Contact support.');
+        await _supabase.auth.signOut(); btn.textContent='Sign In 🌸'; btn.disabled=false; return;
+      }
+      redirectByRole(profile?.role || 'buyer');
+    }
+
+    async function sendOTP() {
+      const phone = document.getElementById('otp-phone').value.trim();
+      if (!phone) { showErr('login-err', 'Enter your phone number'); return; }
+      // Demo OTP
+      generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+      console.log('%cPetal Rush OTP: ' + generatedOTP, 'color:hotpink;font-size:20px;font-weight:bold;');
+      document.getElementById('otp-step-1').style.display = 'none';
+      document.getElementById('otp-step-2').style.display = 'block';
+      showToast('OTP sent! Check browser console for demo OTP', 'info');
+    }
+
+    function otpFwd(el, nextId) {
+      if (el.value.length === 1) {
+        const next = document.getElementById(nextId);
+        if (next) next.focus();
+      }
+    }
+
+    async function verifyOTPLogin() {
+      const otp = ['o0','o1','o2','o3','o4','o5'].map(id => document.getElementById(id).value).join('');
+      if (otp === generatedOTP) {
+        showToast('OTP verified! Please sign in with password', 'success');
+        setMethod('password');
+      } else {
+        showErr('login-err', 'Incorrect OTP. Try again.');
+        ['o0','o1','o2','o3','o4','o5'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('o0').focus();
+      }
+    }
+
+    async function doRegister() {
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const phone = document.getElementById('reg-phone').value.trim();
+      const pass = document.getElementById('reg-pass').value;
+      const pass2 = document.getElementById('reg-pass2').value;
+      if (!name || !email || !pass) { showErr('reg-err','Please fill all required fields'); return; }
+      if (pass !== pass2) { showErr('reg-err','Passwords do not match'); return; }
+      if (pass.length < 6) { showErr('reg-err','Password must be at least 6 characters'); return; }
+      const btn = document.getElementById('reg-btn');
+      btn.textContent = 'Creating account...'; btn.disabled = true;
+      const { data, error } = await _supabase.auth.signUp({
+        email, password: pass,
+        options: { data: { name, phone, role: selectedRole } }
+      });
+      if (error) { showErr('reg-err', friendlyErr(error.message)); btn.textContent='Create Account 🌸'; btn.disabled=false; return; }
+      if (selectedRole === 'seller') {
+        showToast('Account created! Awaiting admin approval.', 'info');
+        setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+      } else {
+        const profile = await getUserData(data.user.id);
+        if (profile) redirectByRole(profile.role);
+        else { showToast('Account created! Please sign in.', 'success'); switchTab('login'); }
+      }
+    }
+
+    async function sendReset() {
+      const email = document.getElementById('forgot-email').value.trim();
+      if (!email) { showToast('Enter your email address', 'warn'); return; }
+      const { error } = await _supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/login.html` });
+      if (error) { showToast(error.message, 'error'); return; }
+      showToast('Password reset link sent to your email!', 'success');
+      closeModal('forgot-modal');
+    }
+  </script>
+</body>
+</html>
