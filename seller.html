@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#4caf50"/>
+  <title>Seller Dashboard — Petal Rush 🏪</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+</head>
+<body>
+<div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <span style="font-size:28px;">🏪</span>
+    <span class="logo-text">Seller Hub</span>
+  </div>
+  <div class="sidebar-user">
+    <div class="sidebar-avatar" id="sb-avatar">S</div>
+    <div>
+      <div class="sidebar-name" id="sb-name">Loading...</div>
+      <div class="sidebar-role" style="color:var(--green);">Seller</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')"><span class="nav-icon">📊</span>Dashboard</div>
+    <div class="nav-item" data-page="products" onclick="showPage('products')"><span class="nav-icon">🌷</span>Products</div>
+    <div class="nav-item" data-page="add-product" onclick="showPage('add-product')"><span class="nav-icon">➕</span>Add Product</div>
+    <div class="nav-item" data-page="orders" onclick="showPage('orders')"><span class="nav-icon">📦</span>Orders<span class="nav-badge" id="orders-badge"></span></div>
+    <div class="nav-item" data-page="earnings" onclick="showPage('earnings')"><span class="nav-icon">💰</span>Earnings</div>
+    <div class="nav-item" data-page="store-profile" onclick="showPage('store-profile')"><span class="nav-icon">⚙️</span>Store & Profile</div>
+  </nav>
+  <div class="sidebar-footer">
+    <button onclick="toggleDarkMode()" class="btn btn-ghost btn-sm"><span class="dark-toggle-icon">🌙</span></button>
+    <button onclick="logout()" class="btn btn-danger btn-sm">Sign Out</button>
+  </div>
+</aside>
+
+<div class="main-content">
+  <header class="topbar">
+    <button onclick="toggleSidebar()" class="btn btn-ghost btn-sm">☰</button>
+    <span class="topbar-title">🏪 Seller Dashboard</span>
+  </header>
+
+  <!-- Pending Banner -->
+  <div id="pending-banner" class="pending-banner" style="display:none;margin:16px 24px 0;">
+    ⚠️ Your seller account is <strong>pending admin approval</strong>. You cannot list products until approved.
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="stats-grid">
+      <div class="stat-tile"><div class="stat-icon">🌷</div><div class="stat-value" id="s-products">0</div><div class="stat-label">Products Listed</div></div>
+      <div class="stat-tile"><div class="stat-icon">📦</div><div class="stat-value" id="s-orders">0</div><div class="stat-label">Total Orders</div></div>
+      <div class="stat-tile"><div class="stat-icon">⏳</div><div class="stat-value" id="s-pending">0</div><div class="stat-label">Pending Orders</div></div>
+      <div class="stat-tile"><div class="stat-icon">💰</div><div class="stat-value" id="s-earnings">₹0</div><div class="stat-label">Total Earnings (85%)</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Recent Orders</span></div>
+        <div id="dash-orders"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Top Products</span></div>
+        <div id="dash-products"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCTS -->
+  <div class="page" id="page-products">
+    <div class="flex-between mb-16">
+      <h2 class="card-title">🌷 My Products</h2>
+      <button class="btn btn-green" onclick="showPage('add-product');clearProdForm()">+ Add Product</button>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>City</th><th>Actions</th></tr></thead>
+          <tbody id="products-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD/EDIT PRODUCT -->
+  <div class="page" id="page-add-product">
+    <div class="flex-between mb-16">
+      <h2 class="card-title" id="prod-form-title">➕ Add New Product</h2>
+      <button class="btn btn-ghost" onclick="showPage('products')">← Back</button>
+    </div>
+    <div class="card">
+      <div class="form-row">
+        <div class="form-group"><label>Product Name *</label><input type="text" id="prod-name" placeholder="Red Rose Bouquet"/></div>
+        <div class="form-group"><label>Category *</label>
+          <select id="prod-cat">
+            <option value="roses">🌹 Roses</option>
+            <option value="lilies">🌸 Lilies</option>
+            <option value="bouquets">💐 Bouquets</option>
+            <option value="seasonal">🌼 Seasonal</option>
+            <option value="exotic">🌺 Exotic</option>
+            <option value="other">🌷 Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Price (₹) *</label><input type="number" id="prod-price" min="1" placeholder="299"/></div>
+        <div class="form-group"><label>Stock Quantity *</label><input type="number" id="prod-stock" min="0" placeholder="50"/></div>
+      </div>
+      <div class="form-group"><label>Description</label><textarea id="prod-desc" rows="3" placeholder="Describe your product..."></textarea></div>
+
+      <!-- Image Section -->
+      <div style="margin-bottom:16px;">
+        <label style="margin-bottom:10px;display:block;">Product Images</label>
+        <div class="method-tabs" style="display:flex;gap:8px;margin-bottom:12px;">
+          <button class="btn btn-outline btn-sm" onclick="setImgTab('upload')" id="img-tab-upload" style="border-color:var(--pink);background:var(--pink);color:white;">📁 Upload</button>
+          <button class="btn btn-ghost btn-sm" onclick="setImgTab('link')" id="img-tab-link">🔗 URL Links</button>
+        </div>
+        <div id="img-upload-section">
+          <input type="file" id="img-files" multiple accept="image/*" onchange="previewImages(event)"/>
+          <div id="img-previews" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"></div>
+        </div>
+        <div id="img-link-section" style="display:none;">
+          <div id="img-link-rows"></div>
+          <button class="btn btn-ghost btn-sm mt-8" onclick="addImgLinkRow()">+ Add URL</button>
+        </div>
+        <div id="existing-images" style="display:none;margin-top:10px;">
+          <p style="font-size:12px;color:var(--text2);margin-bottom:6px;">Current Images:</p>
+          <div id="existing-imgs-wrap" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+        </div>
+      </div>
+
+      <!-- Pickup Location -->
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:8px;">
+        <label style="font-size:15px;font-weight:700;">Pickup Location</label>
+        <div class="form-row mt-16">
+          <div class="form-group"><label>City *</label><input type="text" id="pickup-city" placeholder="Mumbai"/></div>
+          <div class="form-group"><label>Address</label><input type="text" id="pickup-addr" placeholder="Shop address"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Latitude</label><input type="number" id="pickup-lat" step="any"/></div>
+          <div class="form-group"><label>Longitude</label><input type="number" id="pickup-lng" step="any"/></div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="getPickupGPS()">📍 Use My Location</button>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:20px;">
+        <button class="btn btn-green btn-full" onclick="saveProduct()" id="save-prod-btn">Save Product 🌷</button>
+        <button class="btn btn-ghost" onclick="clearProdForm()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="page" id="page-orders">
+    <div class="flex-between mb-16">
+      <h2 class="card-title">📦 My Orders</h2>
+      <select id="order-status-filter" onchange="loadOrders()">
+        <option value="all">All</option>
+        <option value="pending">Pending</option>
+        <option value="confirmed">Confirmed</option>
+        <option value="packed">Packed</option>
+        <option value="shipped">Shipped</option>
+        <option value="delivered">Delivered</option>
+      </select>
+    </div>
+    <div id="seller-orders-list"></div>
+  </div>
+
+  <!-- EARNINGS -->
+  <div class="page" id="page-earnings">
+    <h2 class="card-title mb-16">💰 Earnings</h2>
+    <div class="stats-grid" id="earnings-stats"></div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Payment History</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Order</th><th>Amount</th><th>Your Share (85%)</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="earnings-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- STORE & PROFILE -->
+  <div class="page" id="page-store-profile">
+    <h2 class="card-title mb-16">⚙️ Store & Profile</h2>
+    <div id="store-profile-tabs">
+      <div class="tab-group">
+        <button class="tab-btn" data-tab="personal">Personal</button>
+        <button class="tab-btn" data-tab="store">E-Store</button>
+        <button class="tab-btn" data-tab="bank">Bank Details</button>
+        <button class="tab-btn" data-tab="security">Security</button>
+      </div>
+
+      <div class="tab-panel card" data-tab="personal">
+        <div class="form-row">
+          <div class="form-group"><label>Full Name</label><input type="text" id="sp-name"/></div>
+          <div class="form-group"><label>Phone</label><input type="tel" id="sp-phone"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Alt Phone</label><input type="tel" id="sp-alt-phone"/></div>
+          <div class="form-group"><label>PAN Number</label><input type="text" id="sp-pan"/></div>
+        </div>
+        <div class="form-group"><label>GST Number</label><input type="text" id="sp-gst"/></div>
+        <div class="form-group"><label>Business Address</label><textarea id="sp-biz-addr" rows="2"></textarea></div>
+        <button class="btn btn-green" onclick="saveSellerPersonal()">Save Personal Info</button>
+      </div>
+
+      <div class="tab-panel card" data-tab="store">
+        <div class="form-row">
+          <div class="form-group"><label>Store Name</label><input type="text" id="store-name" oninput="updateStorePreview()"/></div>
+          <div class="form-group"><label>Store Category</label>
+            <select id="store-cat">
+              <option value="roses">Roses Specialist</option>
+              <option value="bouquets">Bouquet Studio</option>
+              <option value="exotic">Exotic Blooms</option>
+              <option value="general">General Flowers</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group"><label>Store Tagline</label><input type="text" id="store-tagline" oninput="updateStorePreview()" placeholder="Fresh flowers every day!"/></div>
+        <div class="form-group"><label>Description</label><textarea id="store-desc" rows="3"></textarea></div>
+        <div class="form-row">
+          <div class="form-group"><label>WhatsApp Number</label><input type="tel" id="store-wa"/></div>
+          <div class="form-group"><label>Store Email</label><input type="email" id="store-email"/></div>
+        </div>
+        <!-- Store Preview -->
+        <div id="store-preview" style="background:var(--pink-light);border-radius:var(--radius);padding:20px;margin:16px 0;text-align:center;">
+          <h3 id="preview-name" style="font-family:'Playfair Display',serif;color:var(--pink);">Your Store Name</h3>
+          <p id="preview-tagline" style="color:var(--text2);font-size:14px;">Your tagline</p>
+        </div>
+        <button class="btn btn-green" onclick="saveStoreSettings()">Save Store Settings</button>
+      </div>
+
+      <div class="tab-panel card" data-tab="bank">
+        <div id="bank-locked" style="text-align:center;padding:32px;">
+          <div style="font-size:48px;margin-bottom:16px;">🔐</div>
+          <p style="color:var(--text2);margin-bottom:16px;">Bank details are locked for security</p>
+          <button class="btn btn-primary" onclick="unlockSellerBank()">Unlock Bank Details</button>
+        </div>
+        <div id="bank-form" style="display:none;">
+          <div class="form-row">
+            <div class="form-group"><label>Account Holder Name</label><input type="text" id="bank-holder"/></div>
+            <div class="form-group"><label>Bank Name</label><input type="text" id="bank-name"/></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Account Number</label><input type="text" id="bank-acc"/></div>
+            <div class="form-group"><label>Confirm Account</label><input type="text" id="bank-acc2"/></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>IFSC Code</label><input type="text" id="bank-ifsc"/></div>
+            <div class="form-group"><label>UPI ID</label><input type="text" id="bank-upi" oninput="previewUPI()"/></div>
+          </div>
+          <div id="upi-qr-wrap" class="qr-wrap" style="display:none;max-width:160px;"></div>
+          <div style="display:flex;gap:8px;margin-top:16px;">
+            <button class="btn btn-green" onclick="saveBankDetails()">Save Bank Details</button>
+            <button class="btn btn-ghost" onclick="lockSellerBank()">🔒 Lock</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel card" data-tab="security">
+        <div class="form-group"><label>Current Password</label><input type="password" id="s-cur-pass"/></div>
+        <div class="form-group"><label>New Password</label><input type="password" id="s-new-pass"/></div>
+        <div class="form-group"><label>Confirm New Password</label><input type="password" id="s-new-pass2"/></div>
+        <button class="btn btn-primary" onclick="changeSellerPass()">Update Password 🔐</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <div class="bn-items">
+    <div class="bn-item active" data-page="dashboard" onclick="showPage('dashboard')"><span class="bn-icon">📊</span>Dashboard</div>
+    <div class="bn-item" data-page="products" onclick="showPage('products')"><span class="bn-icon">🌷</span>Products</div>
+    <div class="bn-item" data-page="orders" onclick="showPage('orders')"><span class="bn-icon">📦</span>Orders</div>
+    <div class="bn-item" data-page="earnings" onclick="showPage('earnings')"><span class="bn-icon">💰</span>Earnings</div>
+    <div class="bn-item" data-page="store-profile" onclick="showPage('store-profile')"><span class="bn-icon">⚙️</span>Profile</div>
+  </div>
+</nav>
+
+<!-- QR Modal -->
+<div class="modal" id="qr-modal">
+  <div class="modal-box" style="max-width:400px;text-align:center;">
+    <div class="modal-header">
+      <span class="modal-title">Order QR Code</span>
+      <button class="modal-close" onclick="closeModal('qr-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="order-qr-container" class="qr-wrap"></div>
+      <p style="margin-top:12px;font-size:13px;color:var(--text2);">Show this to the delivery partner for pickup</p>
+      <div id="pickup-code-display" style="margin-top:12px;"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/shared.js"></script>
+<script>
+let CU = null;
+let editId = null;
+let imgMode = 'upload';
+let imgFiles = [];
+
+window.addEventListener('DOMContentLoaded', async () => {
+  CU = await requireRole('seller');
+  if (!CU) return;
+  document.getElementById('sb-name').textContent = CU.name;
+  document.getElementById('sb-avatar').textContent = CU.name?.charAt(0)?.toUpperCase() || 'S';
+  if (CU.status === 'pending') document.getElementById('pending-banner').style.display = 'flex';
+  await loadDashboard();
+  initTabs('store-profile-tabs');
+  subscribeToOrders(CU.id, 'seller', () => { loadDashboard(); if (document.getElementById('page-orders').classList.contains('active')) loadOrders(); });
+});
+
+window.onPageShow_dashboard = loadDashboard;
+window.onPageShow_products = loadMyProducts;
+window.onPageShow_orders = loadOrders;
+window.onPageShow_earnings = loadEarnings;
+window.onPageShow_store_profile = loadSellerProfile;
+
+async function loadDashboard() {
+  const [{ data: products }, { data: orders }] = await Promise.all([
+    _supabase.from('products').select('*').eq('seller_id', CU.id),
+    _supabase.from('orders').select('*').eq('seller_id', CU.id).order('created_at', { ascending: false })
+  ]);
+  const deliveredOrders = (orders || []).filter(o => o.status === 'delivered');
+  const earnings = deliveredOrders.reduce((s, o) => s + (o.seller_share || 0), 0);
+  const pending = (orders || []).filter(o => o.status === 'pending').length;
+  document.getElementById('s-products').textContent = (products || []).length;
+  document.getElementById('s-orders').textContent = (orders || []).length;
+  document.getElementById('s-pending').textContent = pending;
+  document.getElementById('s-earnings').textContent = fmtINR(earnings);
+  const badge = document.getElementById('orders-badge');
+  if (badge) { badge.textContent = pending; badge.classList.toggle('show', pending > 0); }
+  const recentOrders = (orders || []).slice(0, 4);
+  document.getElementById('dash-orders').innerHTML = recentOrders.length ? recentOrders.map(o => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div><div style="font-weight:600;font-size:13px;">#${o.id.slice(0,8).toUpperCase()}</div><div style="font-size:12px;color:var(--text2);">${fmtDate(o.created_at)}</div></div>
+      <div style="text-align:right;">${statusBadge(o.status)}<div style="font-weight:700;color:var(--pink);font-size:13px;">${fmtINR(o.total_amount)}</div></div>
+    </div>`).join('') : '<p style="color:var(--text2);font-size:14px;padding:16px 0;">No orders yet</p>';
+  const topProds = (products || []).sort((a,b) => b.review_count - a.review_count).slice(0, 4);
+  document.getElementById('dash-products').innerHTML = topProds.length ? topProds.map(p => `
+    <div style="display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="font-size:28px;">${catEmoji(p.category)}</div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:13px;">${p.name}</div>
+        <div style="font-size:12px;color:var(--text2);">${fmtINR(p.price)} · Stock: ${p.stock}</div>
+      </div>
+    </div>`).join('') : '<p style="color:var(--text2);font-size:14px;padding:16px 0;">No products yet</p>';
+}
+
+async function loadMyProducts() {
+  const { data, error } = await _supabase.from('products').select('*').eq('seller_id', CU.id).order('created_at', { ascending: false });
+  const tbody = document.getElementById('products-table');
+  if (error || !data?.length) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text2);">No products yet. <a onclick="showPage('add-product')" style="cursor:pointer;color:var(--green);">Add your first product!</a></td></tr>`; return; }
+  tbody.innerHTML = data.map(p => `
+    <tr>
+      <td>${p.images?.[0] ? `<img src="${p.images[0]}" style="width:48px;height:48px;object-fit:cover;border-radius:var(--radius-sm);">` : `<span style="font-size:28px;">${catEmoji(p.category)}</span>`}</td>
+      <td><strong>${p.name}</strong></td>
+      <td>${catEmoji(p.category)} ${cap(p.category)}</td>
+      <td style="color:var(--pink);font-weight:700;">${fmtINR(p.price)}</td>
+      <td>${p.stock}</td>
+      <td>${p.pickup?.city || '—'}</td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-outline btn-sm" onclick="editProduct('${p.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteProd('${p.id}')">Delete</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+async function editProduct(id) {
+  const { data: p } = await _supabase.from('products').select('*').eq('id', id).single();
+  editId = id;
+  document.getElementById('prod-form-title').textContent = '✏️ Edit Product';
+  document.getElementById('prod-name').value = p.name;
+  document.getElementById('prod-cat').value = p.category;
+  document.getElementById('prod-price').value = p.price;
+  document.getElementById('prod-stock').value = p.stock;
+  document.getElementById('prod-desc').value = p.description || '';
+  document.getElementById('pickup-city').value = p.pickup?.city || '';
+  document.getElementById('pickup-addr').value = p.pickup?.address || '';
+  document.getElementById('pickup-lat').value = p.pickup?.lat || '';
+  document.getElementById('pickup-lng').value = p.pickup?.lng || '';
+  if (p.images?.length) {
+    setImgTab('link');
+    const wrap = document.getElementById('existing-imgs-wrap');
+    wrap.innerHTML = p.images.map(url => `<img src="${url}" style="width:60px;height:60px;object-fit:cover;border-radius:var(--radius-sm);">`).join('');
+    document.getElementById('existing-images').style.display = 'block';
+  }
+  showPage('add-product');
+}
+
+async function deleteProd(id) {
+  if (!confirm('Delete this product?')) return;
+  await _supabase.from('products').delete().eq('id', id);
+  showToast('Product deleted', 'success');
+  loadMyProducts();
+}
+
+function clearProdForm() {
+  editId = null;
+  document.getElementById('prod-form-title').textContent = '➕ Add New Product';
+  ['prod-name','prod-price','prod-stock','prod-desc','pickup-city','pickup-addr','pickup-lat','pickup-lng'].forEach(id => document.getElementById(id) && (document.getElementById(id).value = ''));
+  document.getElementById('img-previews').innerHTML = '';
+  document.getElementById('existing-images').style.display = 'none';
+  document.getElementById('img-link-rows').innerHTML = '';
+}
+
+function setImgTab(mode) {
+  imgMode = mode;
+  document.getElementById('img-upload-section').style.display = mode === 'upload' ? 'block' : 'none';
+  document.getElementById('img-link-section').style.display = mode === 'link' ? 'block' : 'none';
+  document.getElementById('img-tab-upload').style.cssText = mode==='upload' ? 'background:var(--pink);color:white;border-color:var(--pink);' : '';
+  document.getElementById('img-tab-link').style.cssText = mode==='link' ? 'background:var(--green);color:white;border-color:var(--green);' : '';
+}
+
+function previewImages(event) {
+  imgFiles = Array.from(event.target.files);
+  const wrap = document.getElementById('img-previews');
+  wrap.innerHTML = '';
+  imgFiles.forEach((file, i) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const div = document.createElement('div');
+      div.style.cssText = 'position:relative;display:inline-block;';
+      div.innerHTML = `<img src="${e.target.result}" style="width:72px;height:72px;object-fit:cover;border-radius:var(--radius-sm);"><button onclick="removePreview(${i})" style="position:absolute;top:-6px;right:-6px;background:red;color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:10px;">✕</button>`;
+      wrap.appendChild(div);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removePreview(i) { imgFiles.splice(i, 1); }
+
+function addImgLinkRow() {
+  const container = document.getElementById('img-link-rows');
+  if (container.children.length >= 6) { showToast('Maximum 6 images', 'warn'); return; }
+  const row = document.createElement('div');
+  row.className = 'form-group';
+  row.innerHTML = `<input type="url" placeholder="https://example.com/flower.jpg" class="img-url-input"/>`;
+  container.appendChild(row);
+}
+
+function getPickupGPS() {
+  navigator.geolocation.getCurrentPosition(pos => {
+    document.getElementById('pickup-lat').value = pos.coords.latitude.toFixed(6);
+    document.getElementById('pickup-lng').value = pos.coords.longitude.toFixed(6);
+    showToast('Location captured!', 'success');
+  }, () => showToast('Could not get location', 'warn'));
+}
+
+async function saveProduct() {
+  if (CU.status === 'pending') { showToast('Account pending approval', 'warn'); return; }
+  const name = document.getElementById('prod-name').value.trim();
+  const price = parseFloat(document.getElementById('prod-price').value);
+  const stock = parseInt(document.getElementById('prod-stock').value);
+  if (!name || !price || stock == null) { showToast('Fill required fields', 'warn'); return; }
+  const btn = document.getElementById('save-prod-btn');
+  btn.textContent = 'Saving...'; btn.disabled = true;
+
+  let images = [];
+  if (imgMode === 'upload' && imgFiles.length > 0) {
+    for (const file of imgFiles) {
+      const url = await uploadFile(file, 'product-images', `${CU.id}/${Date.now()}_${file.name}`);
+      images.push(url);
+    }
+  } else {
+    images = Array.from(document.querySelectorAll('.img-url-input')).map(el => el.value.trim()).filter(Boolean);
+  }
+
+  const pickup = {
+    city: document.getElementById('pickup-city').value.trim(),
+    address: document.getElementById('pickup-addr').value.trim(),
+    lat: parseFloat(document.getElementById('pickup-lat').value) || null,
+    lng: parseFloat(document.getElementById('pickup-lng').value) || null
+  };
+
+  const productData = {
+    seller_id: CU.id, seller_name: CU.name, store_name: CU.store?.name || CU.name,
+    name, category: document.getElementById('prod-cat').value,
+    price, stock, description: document.getElementById('prod-desc').value,
+    images, pickup, is_active: true
+  };
+
+  let error;
+  if (editId) {
+    ({ error } = await _supabase.from('products').update(productData).eq('id', editId));
+  } else {
+    ({ error } = await _supabase.from('products').insert({ ...productData, rating: 0, review_count: 0 }));
+  }
+
+  btn.textContent = 'Save Product 🌷'; btn.disabled = false;
+  if (error) { showToast(error.message, 'error'); return; }
+  showToast(editId ? 'Product updated!' : 'Product added! 🌷', 'success');
+  clearProdForm();
+  showPage('products');
+}
+
+async function loadOrders() {
+  const filter = document.getElementById('order-status-filter')?.value || 'all';
+  let query = _supabase.from('orders').select('*').eq('seller_id', CU.id).order('created_at', { ascending: false });
+  if (filter !== 'all') query = query.eq('status', filter);
+  const { data } = await query;
+  const el = document.getElementById('seller-orders-list');
+  if (!data?.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><h3>No orders</h3></div>'; return; }
+  el.innerHTML = data.map(o => `
+    <div class="order-card fade-in">
+      <div class="flex-between mb-8">
+        <span style="font-weight:700;">#${o.id.slice(0,8).toUpperCase()}</span>
+        ${statusBadge(o.status)}
+      </div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:8px;">${fmtDateTime(o.created_at)} · 📍 ${o.address?.city || '—'} · 💳 ${cap(o.payment_mode)}</div>
+      <div style="font-size:20px;font-weight:800;color:var(--pink);margin-bottom:12px;">${fmtINR(o.total_amount)} <span style="font-size:13px;font-weight:600;color:var(--green);">→ You get ${fmtINR(o.seller_share)}</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        ${o.status === 'pending' ? `<button class="btn btn-green btn-sm" onclick="updateOrderStatus('${o.id}','confirmed')">✓ Confirm</button>` : ''}
+        ${o.status === 'confirmed' ? `<button class="btn btn-primary btn-sm" onclick="updateOrderStatus('${o.id}','packed')">📦 Mark Packed</button>` : ''}
+        ${['confirmed','packed'].includes(o.status) ? `<button class="btn btn-ghost btn-sm" onclick="showOrderQR('${o.id}')">📱 Show QR</button>` : ''}
+      </div>
+      ${o.pickup_code ? `<div style="margin-top:10px;font-size:13px;">Pickup Code: <strong style="color:var(--green);letter-spacing:4px;">${o.pickup_code}</strong></div>` : ''}
+    </div>`).join('');
+}
+
+async function updateOrderStatus(orderId, status) {
+  const update = { status };
+  if (status === 'confirmed') update.confirmed_at = new Date().toISOString();
+  if (status === 'packed') { update.pickup_code = genCode(7); update.packed_at = new Date().toISOString(); }
+  const { error } = await _supabase.from('orders').update(update).eq('id', orderId);
+  if (error) { showToast(error.message, 'error'); return; }
+  showToast(`Order marked as ${status}!`, 'success');
+  loadOrders();
+}
+
+async function showOrderQR(orderId) {
+  const { data: o } = await _supabase.from('orders').select('*').eq('id', orderId).single();
+  const qrData = JSON.stringify({ orderId: o.id, pickupCode: o.pickup_code, totalAmount: o.total_amount, paymentMode: o.payment_mode, address: o.address, deliveryCode: o.delivery_code });
+  document.getElementById('order-qr-container').innerHTML = '';
+  document.getElementById('pickup-code-display').innerHTML = o.pickup_code ? `<p>Pickup Code: <strong style="font-size:24px;letter-spacing:6px;color:var(--green);">${o.pickup_code}</strong></p>` : '';
+  openModal('qr-modal');
+  setTimeout(() => renderQR('order-qr-container', qrData, 200), 100);
+}
+
+async function loadEarnings() {
+  const [{ data: orders }, { data: payments }] = await Promise.all([
+    _supabase.from('orders').select('*').eq('seller_id', CU.id),
+    _supabase.from('payments').select('*').eq('seller_id', CU.id).order('created_at', { ascending: false }).limit(10)
+  ]);
+  const delivered = (orders || []).filter(o => o.status === 'delivered');
+  const totalEarnings = delivered.reduce((s, o) => s + (o.seller_share || 0), 0);
+  const pendingEarnings = (orders || []).filter(o => ['pending','confirmed','packed','shipped'].includes(o.status)).reduce((s, o) => s + (o.seller_share || 0), 0);
+  document.getElementById('earnings-stats').innerHTML = `
+    <div class="stat-tile"><div class="stat-icon">💰</div><div class="stat-value">${fmtINR(totalEarnings)}</div><div class="stat-label">Total Earned</div></div>
+    <div class="stat-tile"><div class="stat-icon">⏳</div><div class="stat-value">${fmtINR(pendingEarnings)}</div><div class="stat-label">Pending Earnings</div></div>
+    <div class="stat-tile"><div class="stat-icon">📦</div><div class="stat-value">${delivered.length}</div><div class="stat-label">Delivered Orders</div></div>`;
+  const tbody = document.getElementById('earnings-table');
+  tbody.innerHTML = (payments || []).map(p => `
+    <tr>
+      <td>#${p.order_id.slice(0,8).toUpperCase()}</td>
+      <td>${fmtINR(p.total_amount)}</td>
+      <td style="color:var(--green);font-weight:700;">${fmtINR(p.seller_share)}</td>
+      <td>${statusBadge(p.status)}</td>
+      <td>${fmtDate(p.created_at)}</td>
+    </tr>`).join('') || `<tr><td colspan="5" style="text-align:center;color:var(--text2);padding:24px;">No payment records yet</td></tr>`;
+}
+
+async function loadSellerProfile() {
+  document.getElementById('sp-name').value = CU.name || '';
+  document.getElementById('sp-phone').value = CU.phone || '';
+  document.getElementById('sp-alt-phone').value = CU.store?.alt_phone || '';
+  document.getElementById('sp-pan').value = CU.documents?.pan || '';
+  document.getElementById('sp-gst').value = CU.documents?.gst || '';
+  document.getElementById('sp-biz-addr').value = CU.store?.biz_address || '';
+  document.getElementById('store-name').value = CU.store?.name || '';
+  document.getElementById('store-tagline').value = CU.store?.tagline || '';
+  document.getElementById('store-desc').value = CU.store?.description || '';
+  document.getElementById('store-wa').value = CU.store?.whatsapp || '';
+  document.getElementById('store-email').value = CU.store?.email || '';
+  updateStorePreview();
+}
+
+function updateStorePreview() {
+  const name = document.getElementById('store-name').value || 'Your Store';
+  const tagline = document.getElementById('store-tagline').value || 'Your tagline';
+  document.getElementById('preview-name').textContent = name;
+  document.getElementById('preview-tagline').textContent = tagline;
+}
+
+async function saveSellerPersonal() {
+  const update = { name: document.getElementById('sp-name').value, phone: document.getElementById('sp-phone').value,
+    documents: { pan: document.getElementById('sp-pan').value, gst: document.getElementById('sp-gst').value } };
+  const { error } = await _supabase.from('profiles').update(update).eq('id', CU.id);
+  if (error) { showToast(error.message, 'error'); return; }
+  Object.assign(CU, update);
+  showToast('Personal info saved!', 'success');
+}
+
+async function saveStoreSettings() {
+  const store = { name: document.getElementById('store-name').value, tagline: document.getElementById('store-tagline').value,
+    description: document.getElementById('store-desc').value, category: document.getElementById('store-cat').value,
+    whatsapp: document.getElementById('store-wa').value, email: document.getElementById('store-email').value };
+  const { error } = await _supabase.from('profiles').update({ store }).eq('id', CU.id);
+  if (error) { showToast(error.message, 'error'); return; }
+  CU.store = store;
+  showToast('Store settings saved!', 'success');
+}
+
+async function unlockSellerBank() {
+  const pass = prompt('Enter your password to unlock bank details:');
+  if (!pass) return;
+  const { error } = await _supabase.auth.signInWithPassword({ email: CU.email, password: pass });
+  if (error) { showToast('Incorrect password', 'error'); return; }
+  document.getElementById('bank-locked').style.display = 'none';
+  document.getElementById('bank-form').style.display = 'block';
+  if (CU.bank) {
+    document.getElementById('bank-holder').value = CU.bank.holder || '';
+    document.getElementById('bank-name').value = CU.bank.bank_name || '';
+    document.getElementById('bank-acc').value = CU.bank.acc_no || '';
+    document.getElementById('bank-ifsc').value = CU.bank.ifsc || '';
+    document.getElementById('bank-upi').value = CU.bank.upi || '';
+    if (CU.bank.upi) previewUPI();
+  }
+}
+
+function lockSellerBank() {
+  document.getElementById('bank-locked').style.display = 'block';
+  document.getElementById('bank-form').style.display = 'none';
+}
+
+function previewUPI() {
+  const upi = document.getElementById('bank-upi').value.trim();
+  const wrap = document.getElementById('upi-qr-wrap');
+  if (upi) { wrap.style.display = 'flex'; renderQR('upi-qr-wrap', `upi://pay?pa=${upi}&pn=${encodeURIComponent(CU.name)}`, 140); }
+  else wrap.style.display = 'none';
+}
+
+async function saveBankDetails() {
+  const acc = document.getElementById('bank-acc').value;
+  const acc2 = document.getElementById('bank-acc2').value;
+  if (acc !== acc2) { showToast('Account numbers do not match', 'error'); return; }
+  const bank = { holder: document.getElementById('bank-holder').value, bank_name: document.getElementById('bank-name').value, acc_no: acc, ifsc: document.getElementById('bank-ifsc').value, upi: document.getElementById('bank-upi').value };
+  const { error } = await _supabase.from('profiles').update({ bank }).eq('id', CU.id);
+  if (error) { showToast(error.message, 'error'); return; }
+  CU.bank = bank;
+  showToast('Bank details saved! 💰', 'success');
+}
+
+async function changeSellerPass() {
+  const cur = document.getElementById('s-cur-pass').value;
+  const newp = document.getElementById('s-new-pass').value;
+  const newp2 = document.getElementById('s-new-pass2').value;
+  if (newp !== newp2) { showToast('Passwords do not match', 'error'); return; }
+  const { error: signErr } = await _supabase.auth.signInWithPassword({ email: CU.email, password: cur });
+  if (signErr) { showToast('Current password incorrect', 'error'); return; }
+  const { error } = await _supabase.auth.updateUser({ password: newp });
+  if (error) { showToast(error.message, 'error'); return; }
+  showToast('Password updated!', 'success');
+}
+</script>
+</body>
+</html>
