@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#f59e0b"/>
+  <title>Delivery Panel — Petal Rush 🚴</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+</head>
+<body>
+<div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <span style="font-size:28px;">🚴</span>
+    <span class="logo-text">Delivery Hub</span>
+  </div>
+  <div class="sidebar-user">
+    <div class="sidebar-avatar" id="sb-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706);">D</div>
+    <div>
+      <div class="sidebar-name" id="sb-name">Loading...</div>
+      <div class="sidebar-role" style="color:#f59e0b;">Delivery Partner</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')"><span class="nav-icon">📊</span>Dashboard</div>
+    <div class="nav-item" data-page="pickups" onclick="showPage('pickups')"><span class="nav-icon">📦</span>Available Pickups<span class="nav-badge" id="pickups-badge"></span></div>
+    <div class="nav-item" data-page="active" onclick="showPage('active')"><span class="nav-icon">🚴</span>Active Deliveries<span class="nav-badge" id="active-badge"></span></div>
+    <div class="nav-item" data-page="scanner" onclick="showPage('scanner')"><span class="nav-icon">📷</span>QR Scanner</div>
+    <div class="nav-item" data-page="history" onclick="showPage('history')"><span class="nav-icon">📋</span>History</div>
+    <div class="nav-item" data-page="earnings" onclick="showPage('earnings')"><span class="nav-icon">💰</span>Earnings</div>
+    <div class="nav-item" data-page="dp-profile" onclick="showPage('dp-profile')"><span class="nav-icon">👤</span>Profile</div>
+  </nav>
+  <div class="sidebar-footer">
+    <button onclick="toggleDarkMode()" class="btn btn-ghost btn-sm"><span class="dark-toggle-icon">🌙</span></button>
+    <button onclick="logout()" class="btn btn-danger btn-sm">Sign Out</button>
+  </div>
+</aside>
+
+<div class="main-content">
+  <header class="topbar">
+    <button onclick="toggleSidebar()" class="btn btn-ghost btn-sm">☰</button>
+    <span class="topbar-title">🚴 Delivery Dashboard</span>
+  </header>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="stats-grid">
+      <div class="stat-tile" style="--tile-color:#f59e0b;"><div class="stat-icon">📦</div><div class="stat-value" id="d-available">0</div><div class="stat-label">Available Pickups</div></div>
+      <div class="stat-tile"><div class="stat-icon">🚴</div><div class="stat-value" id="d-active">0</div><div class="stat-label">Active Deliveries</div></div>
+      <div class="stat-tile"><div class="stat-icon">✅</div><div class="stat-value" id="d-delivered">0</div><div class="stat-label">Total Delivered</div></div>
+      <div class="stat-tile"><div class="stat-icon">💰</div><div class="stat-value" id="d-earnings">₹0</div><div class="stat-label">Total Earned (10%)</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Available Pickups Nearby</span><button class="btn btn-ghost btn-sm" onclick="showPage('pickups')">View All →</button></div>
+      <div id="dash-pickups"></div>
+    </div>
+  </div>
+
+  <!-- AVAILABLE PICKUPS -->
+  <div class="page" id="page-pickups">
+    <div class="flex-between mb-16">
+      <h2 class="card-title">📦 Available Pickups</h2>
+      <button class="btn btn-ghost btn-sm" onclick="loadPickups()">🔄 Refresh</button>
+    </div>
+    <div id="pickups-list"></div>
+  </div>
+
+  <!-- ACTIVE DELIVERIES -->
+  <div class="page" id="page-active">
+    <h2 class="card-title mb-16">🚴 Active Deliveries</h2>
+    <div id="active-list"></div>
+  </div>
+
+  <!-- QR SCANNER -->
+  <div class="page" id="page-scanner">
+    <h2 class="card-title mb-16">📷 QR Scanner</h2>
+    <div class="card mb-16">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+        <button class="btn btn-primary" onclick="startCamera()" id="start-cam-btn">📷 Start Camera</button>
+        <button class="btn btn-danger btn-sm" onclick="stopCamera()" id="stop-cam-btn" style="display:none;">Stop</button>
+      </div>
+      <video id="qr-video" style="display:none;width:100%;max-width:400px;border-radius:var(--radius);"></video>
+      <div id="scan-result"></div>
+    </div>
+    <div class="card">
+      <h3 style="font-weight:700;margin-bottom:12px;">Manual Code Entry</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>7-digit Pickup Code</label>
+          <input type="text" id="manual-pickup-code" placeholder="1234567" maxlength="7"/>
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn btn-green btn-sm" onclick="lookupPickupCode()">Lookup</button>
+        </div>
+      </div>
+      <div id="manual-lookup-result"></div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="page" id="page-history">
+    <h2 class="card-title mb-16">📋 Delivery History</h2>
+    <div id="history-list"></div>
+  </div>
+
+  <!-- EARNINGS -->
+  <div class="page" id="page-earnings">
+    <h2 class="card-title mb-16">💰 My Earnings</h2>
+    <div class="stats-grid" id="dp-earnings-stats"></div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Order History</span></div>
+      <div id="dp-earnings-list"></div>
+    </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="page" id="page-dp-profile">
+    <h2 class="card-title mb-16">👤 My Profile</h2>
+    <div id="dp-profile-tabs">
+      <div class="tab-group">
+        <button class="tab-btn" data-tab="dp-personal">Personal</button>
+        <button class="tab-btn" data-tab="dp-vehicle">Vehicle</button>
+        <button class="tab-btn" data-tab="dp-bank">Bank</button>
+        <button class="tab-btn" data-tab="dp-security">Security</button>
+      </div>
+      <div class="tab-panel card" data-tab="dp-personal">
+        <div class="form-row">
+          <div class="form-group"><label>Full Name</label><input type="text" id="dp-name"/></div>
+          <div class="form-group"><label>Phone</label><input type="tel" id="dp-phone"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Alt Phone</label><input type="tel" id="dp-alt-phone"/></div>
+          <div class="form-group"><label>Emergency Contact</label><input type="tel" id="dp-emergency"/></div>
+        </div>
+        <div class="form-group"><label>Address</label><textarea id="dp-address" rows="2"></textarea></div>
+        <button class="btn btn-primary" onclick="saveDPPersonal()">Save Personal Info</button>
+      </div>
+      <div class="tab-panel card" data-tab="dp-vehicle">
+        <div class="form-row">
+          <div class="form-group"><label>Vehicle Type</label>
+            <select id="dp-vehicle-type">
+              <option value="bicycle">🚲 Bicycle</option>
+              <option value="motorcycle">🏍️ Motorcycle</option>
+              <option value="scooter">🛵 Scooter</option>
+              <option value="car">🚗 Car</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Vehicle Number</label><input type="text" id="dp-vehicle-no" placeholder="MH12AB1234"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Model</label><input type="text" id="dp-vehicle-model" placeholder="Honda Activa"/></div>
+          <div class="form-group"><label>Color</label><input type="text" id="dp-vehicle-color"/></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>DL Number</label><input type="text" id="dp-dl-no"/></div>
+          <div class="form-group"><label>DL Expiry</label><input type="date" id="dp-dl-expiry"/></div>
+        </div>
+        <button class="btn btn-primary" onclick="saveDPVehicle()">Save Vehicle Details</button>
+      </div>
+      <div class="tab-panel card" data-tab="dp-bank">
+        <div id="dp-bank-locked" style="text-align:center;padding:32px;">
+          <div style="font-size:48px;margin-bottom:16px;">🔐</div>
+          <button class="btn btn-primary" onclick="unlockDPBank()">Unlock Bank Details</button>
+        </div>
+        <div id="dp-bank-form" style="display:none;">
+          <div class="form-row">
+            <div class="form-group"><label>Account Holder</label><input type="text" id="dp-bank-holder"/></div>
+            <div class="form-group"><label>Bank Name</label><input type="text" id="dp-bank-name"/></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Account Number</label><input type="text" id="dp-bank-acc"/></div>
+            <div class="form-group"><label>Confirm Account</label><input type="text" id="dp-bank-acc2"/></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>IFSC Code</label><input type="text" id="dp-bank-ifsc"/></div>
+            <div class="form-group"><label>UPI ID</label><input type="text" id="dp-bank-upi" oninput="previewDPUPI()"/></div>
+          </div>
+          <div id="dp-upi-qr" class="qr-wrap" style="display:none;max-width:160px;"></div>
+          <div style="display:flex;gap:8px;margin-top:16px;">
+            <button class="btn btn-primary" onclick="saveDPBank()">Save Bank Details</button>
+            <button class="btn btn-ghost" onclick="lockDPBank()">🔒 Lock</button>
+          </div>
+        </div>
+      </div>
+      <div class="tab-panel card" data-tab="dp-security">
+        <div class="form-group"><label>Current Password</label><input type="password" id="dp-cur-pass"/></div>
+        <div class="form-group"><label>New Password</label><input type="password" id="dp-new-pass"/></div>
+        <div class="form-group"><label>Confirm New Password</label><input type="password" id="dp-new-pass2"/></div>
+        <button class="btn btn-primary" onclick="changeDPPass()">Update Password 🔐</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <div class="bn-items">
+    <div class="bn-item active" data-page="dashboard" onclick="showPage('dashboard')"><span class="bn-icon">📊</span>Home</div>
+    <div class="bn-item" data-page="pickups" onclick="showPage('pickups')"><span class="bn-icon">📦</span>Pickups</div>
+    <div class="bn-item" data-page="scanner" onclick="showPage('scanner')"><span class="bn-icon">📷</span>Scan</div>
+    <div class="bn-item" data-page="active" onclick="showPage('active')"><span class="bn-icon">🚴</span>Active</div>
+    <div class="bn-item" data-page="dp-profile" onclick="showPage('dp-profile')"><span class="bn-icon">👤</span>Profile</div>
+  </div>
+</nav>
+
+<!-- Delivery Confirm Modal -->
+<div class="modal" id="delivery-confirm-modal">
+  <div class="modal-box" style="max-width:400px;text-align:center;">
+    <div class="modal-header">
+      <span class="modal-title">Enter Delivery Code</span>
+      <button class="modal-close" onclick="closeModal('delivery-confirm-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text2);margin-bottom:16px;">Ask buyer for their 6-digit delivery code</p>
+      <div class="otp-inputs">
+        <input class="otp-input" maxlength="1" id="dc0" oninput="otpJump(this,'dc1')"/>
+        <input class="otp-input" maxlength="1" id="dc1" oninput="otpJump(this,'dc2')"/>
+        <input class="otp-input" maxlength="1" id="dc2" oninput="otpJump(this,'dc3')"/>
+        <input class="otp-input" maxlength="1" id="dc3" oninput="otpJump(this,'dc4')"/>
+        <input class="otp-input" maxlength="1" id="dc4" oninput="otpJump(this,'dc5')"/>
+        <input class="otp-input" maxlength="1" id="dc5"/>
+      </div>
+      <button class="btn btn-green btn-full mt-16" id="verify-delivery-btn" onclick="verifyDeliveryCode()">Confirm Delivery ✅</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pickup Details Modal -->
+<div class="modal" id="pickup-detail-modal">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-header">
+      <span class="modal-title">Pickup Details</span>
+      <button class="modal-close" onclick="closeModal('pickup-detail-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="pickup-detail-body"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/shared.js"></script>
+<script>
+let CU = null;
+let cameraStream = null;
+let scanInterval = null;
+let currentDeliveryOrder = null;
+let currentDeliveryCode = null;
+
+window.addEventListener('DOMContentLoaded', async () => {
+  CU = await requireRole('delivery');
+  if (!CU) return;
+  document.getElementById('sb-name').textContent = CU.name;
+  document.getElementById('sb-avatar').textContent = CU.name?.charAt(0)?.toUpperCase() || 'D';
+  await loadDashboard();
+  initTabs('dp-profile-tabs');
+  subscribeToOrders(CU.id, 'delivery', loadDashboard);
+});
+
+window.onPageShow_dashboard = loadDashboard;
+window.onPageShow_pickups = loadPickups;
+window.onPageShow_active = loadActiveDeliveries;
+window.onPageShow_history = loadHistory;
+window.onPageShow_earnings = loadEarnings;
+window.onPageShow_dp_profile = loadDPProfile;
+
+async function loadDashboard() {
+  const [{ data: packed }, { data: active }, { data: delivered }] = await Promise.all([
+    _supabase.from('orders').select('*').eq('status', 'packed'),
+    _supabase.from('orders').select('*').eq('delivery_partner_id', CU.id).eq('status', 'shipped'),
+    _supabase.from('orders').select('*').eq('delivery_partner_id', CU.id).eq('status', 'delivered')
+  ]);
+  const earnings = (delivered || []).reduce((s, o) => s + (o.delivery_share || 0), 0);
+  document.getElementById('d-available').textContent = (packed || []).length;
+  document.getElementById('d-active').textContent = (active || []).length;
+  document.getElementById('d-delivered').textContent = (delivered || []).length;
+  document.getElementById('d-earnings').textContent = fmtINR(earnings);
+  const pb = document.getElementById('pickups-badge'); if (pb) { pb.textContent = (packed||[]).length; pb.classList.toggle('show', (packed||[]).length > 0); }
+  const ab = document.getElementById('active-badge'); if (ab) { ab.textContent = (active||[]).length; ab.classList.toggle('show', (active||[]).length > 0); }
+  const el = document.getElementById('dash-pickups');
+  el.innerHTML = (packed||[]).slice(0,3).map(o => pickupCardHTML(o)).join('') || '<div class="empty-state" style="padding:20px;"><p>No pickups available right now</p></div>';
+}
+
+function pickupCardHTML(o) {
+  const earn = fmtINR(o.delivery_share || Math.round(o.total_amount * 0.1));
+  return `<div class="card mb-8 fade-in" style="border-left:4px solid #f59e0b;">
+    <div class="flex-between">
+      <div><span style="font-weight:700;">#${o.id.slice(0,8).toUpperCase()}</span><br><span style="font-size:12px;color:var(--text2);">📍 ${o.address?.city} · ${fmtDate(o.created_at)}</span></div>
+      <div style="text-align:right;"><span style="color:#f59e0b;font-weight:800;font-size:16px;">${earn}</span><br><span style="font-size:11px;color:var(--text2);">your earnings</span></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button class="btn btn-green btn-sm" onclick="acceptPickup('${o.id}')">Accept Pickup</button>
+      <button class="btn btn-ghost btn-sm" onclick="viewPickupDetails('${o.id}')">Details</button>
+    </div>
+  </div>`;
+}
+
+async function loadPickups() {
+  const { data } = await _supabase.from('orders').select('*').eq('status', 'packed').order('created_at', { ascending: false });
+  const el = document.getElementById('pickups-list');
+  el.innerHTML = data?.length ? data.map(pickupCardHTML).join('') : '<div class="empty-state"><div class="empty-icon">📦</div><h3>No pickups available</h3></div>';
+}
+
+async function acceptPickup(orderId) {
+  const { error } = await _supabase.from('orders').update({
+    status: 'shipped', delivery_partner_id: CU.id, delivery_partner_name: CU.name,
+    shipped_at: new Date().toISOString()
+  }).eq('id', orderId);
+  if (error) { showToast(error.message, 'error'); return; }
+  showToast('Pickup accepted! 🚴', 'success');
+  loadDashboard(); loadPickups();
+}
+
+async function viewPickupDetails(orderId) {
+  const { data: o } = await _supabase.from('orders').select('*').eq('id', orderId).single();
+  const lat = o.address?.lat, lng = o.address?.lng;
+  const navLink = lat && lng ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}` : '#';
+  const pickupLat = o.pickup?.lat, pickupLng = o.pickup?.lng;
+  const pickupNav = pickupLat && pickupLng ? `https://www.google.com/maps/dir/?api=1&destination=${pickupLat},${pickupLng}` : '#';
+  document.getElementById('pickup-detail-body').innerHTML = `
+    <div class="grid-2 mb-16">
+      <div><span style="color:var(--text2);font-size:12px;">ORDER ID</span><p style="font-weight:700;">#${o.id.slice(0,8).toUpperCase()}</p></div>
+      <div><span style="color:var(--text2);font-size:12px;">PICKUP CODE</span><p style="font-weight:700;color:var(--green);letter-spacing:4px;">${o.pickup_code || 'Not set'}</p></div>
+      <div><span style="color:var(--text2);font-size:12px;">TOTAL</span><p style="font-weight:700;">${fmtINR(o.total_amount)}</p></div>
+      <div><span style="color:var(--text2);font-size:12px;">YOUR EARN</span><p style="font-weight:700;color:#f59e0b;">${fmtINR(o.delivery_share || Math.round(o.total_amount * 0.1))}</p></div>
+      <div><span style="color:var(--text2);font-size:12px;">PAYMENT</span><p style="font-weight:700;">${cap(o.payment_mode)}</p></div>
+    </div>
+    <div style="background:var(--pink-light);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;">
+      <p style="font-size:12px;font-weight:700;color:var(--pink-dark);margin-bottom:4px;">DELIVER TO</p>
+      <p>${o.address?.text}, ${o.address?.city} — ${o.address?.pin}</p>
+      ${lat && lng ? `<a href="${navLink}" target="_blank" class="btn btn-primary btn-sm mt-8">Navigate 🗺️</a>` : ''}
+    </div>
+    <button class="btn btn-green btn-full" onclick="acceptPickup('${o.id}');closeModal('pickup-detail-modal')">Accept This Pickup</button>`;
+  openModal('pickup-detail-modal');
+}
+
+async function loadActiveDeliveries() {
+  const { data } = await _supabase.from('orders').select('*').eq('delivery_partner_id', CU.id).eq('status', 'shipped').order('created_at', { ascending: false });
+  const el = document.getElementById('active-list');
+  if (!data?.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🚴</div><h3>No active deliveries</h3></div>'; return; }
+  el.innerHTML = data.map(o => {
+    const lat = o.address?.lat, lng = o.address?.lng;
+    const navLink = lat && lng ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}` : null;
+    return `<div class="order-card fade-in" style="border-left:4px solid var(--green);">
+      <div class="flex-between mb-8">
+        <span style="font-weight:700;">#${o.id.slice(0,8).toUpperCase()}</span>
+        <span style="color:#f59e0b;font-weight:800;">${fmtINR(o.delivery_share || Math.round(o.total_amount * 0.1))}</span>
+      </div>
+      <p style="font-size:14px;margin-bottom:4px;">📍 ${o.address?.text}, ${o.address?.city}</p>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">💳 ${cap(o.payment_mode)} · ${fmtDate(o.created_at)}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${navLink ? `<a href="${navLink}" target="_blank" class="btn btn-green btn-sm">🗺️ Navigate</a>` : ''}
+        <button class="btn btn-primary btn-sm" onclick="initiateDeliveryConfirm('${o.id}','${o.delivery_code}')">✅ Confirm Delivery</button>
+        <button class="btn btn-ghost btn-sm" onclick="startCamera();showPage('scanner')">📷 Scan QR</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function initiateDeliveryConfirm(orderId, expectedCode) {
+  currentDeliveryOrder = orderId;
+  currentDeliveryCode = expectedCode;
+  ['dc0','dc1','dc2','dc3','dc4','dc5'].forEach(id => document.getElementById(id) && (document.getElementById(id).value = ''));
+  document.getElementById('dc0')?.focus();
+  openModal('delivery-confirm-modal');
+}
+
+function otpJump(el, nextId) {
+  if (el.value.length === 1) { const n = document.getElementById(nextId); if (n) n.focus(); }
+}
+
+async function verifyDeliveryCode() {
+  const entered = ['dc0','dc1','dc2','dc3','dc4','dc5'].map(id => document.getElementById(id)?.value || '').join('');
+  if (entered !== currentDeliveryCode) { showToast('Incorrect code. Ask buyer again.', 'error'); return; }
+  await completeDelivery(currentDeliveryOrder);
+  closeModal('delivery-confirm-modal');
+}
+
+async function completeDelivery(orderId) {
+  const { error } = await _supabase.from('orders').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', orderId);
+  if (error) { showToast(error.message, 'error'); return; }
+  await _supabase.from('payments').update({ status: 'completed', released_at: new Date().toISOString() }).eq('order_id', orderId);
+  showToast('Delivery confirmed! 🎉 Payment released!', 'success');
+  loadDashboard(); loadActiveDeliveries();
+}
+
+// --- QR Scanner ---
+async function startCamera() {
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const video = document.getElementById('qr-video');
+    video.srcObject = cameraStream;
+    video.style.display = 'block';
+    video.play();
+    document.getElementById('start-cam-btn').style.display = 'none';
+    document.getElementById('stop-cam-btn').style.display = 'inline-flex';
+    const canvas = document.createElement('canvas');
+    scanInterval = setInterval(() => {
+      if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+      canvas.height = video.videoHeight;
+      canvas.width = video.videoWidth;
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      const img = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(img.data, img.width, img.height);
+      if (code) { stopCamera(); processScannedQR(code.data); }
+    }, 200);
+  } catch (e) { showToast('Camera access denied: ' + e.message, 'error'); }
+}
+
+function stopCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  clearInterval(scanInterval);
+  const v = document.getElementById('qr-video');
+  v.style.display = 'none'; v.srcObject = null;
+  document.getElementById('start-cam-btn').style.display = 'inline-flex';
+  document.getElementById('stop-cam-btn').style.display = 'none';
+}
+
+async function processScannedQR(data) {
+  const result = document.getElementById('scan-result');
+  result.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Processing QR...</p></div>`;
+  // Check if 6-digit delivery code
+  if (/^\d{6}$/.test(data.trim())) {
+    const { data: orders } = await _supabase.from('orders').select('*').eq('delivery_code', data.trim()).eq('delivery_partner_id', CU.id).eq('status', 'shipped');
+    if (orders?.length) {
+      const o = orders[0];
+      result.innerHTML = `<div class="card mt-16"><p>✅ Delivery code matched for Order #${o.id.slice(0,8).toUpperCase()}</p><button class="btn btn-green btn-full mt-8" onclick="completeDelivery('${o.id}')">Confirm Delivery ✅</button></div>`;
+    } else {
+      result.innerHTML = `<div class="card mt-16" style="border-color:red;"><p style="color:red;">❌ No matching active delivery for this code</p></div>`;
+    }
+    return;
+  }
+  // Try JSON pickup QR
+  try {
+    const qrObj = JSON.parse(data);
+    if (qrObj.orderId && qrObj.pickupCode) {
+      const { data: o } = await _supabase.from('orders').select('*').eq('id', qrObj.orderId).single();
+      if (o && o.status === 'packed') {
+        result.innerHTML = `<div class="card mt-16">
+          <p style="font-weight:700;margin-bottom:8px;">📦 Pickup QR Scanned</p>
+          <p>Order: #${o.id.slice(0,8).toUpperCase()} · ${fmtINR(o.total_amount)}</p>
+          <p>📍 ${o.address?.city}</p>
+          <button class="btn btn-green btn-full mt-8" onclick="confirmPickupFromQR('${o.id}')">Accept Pickup ✅</button>
+        </div>`;
+      } else {
+        result.innerHTML = `<div class="card mt-16"><p style="color:var(--text2);">Order already picked up or not available</p></div>`;
+      }
+    }
+  } catch(e) {
+    result.innerHTML = `<div class="card mt-16"><p style="color:var(--text2);">Unknown QR code: ${data}</p></div>`;
+  }
+}
+
+async function confirmPickupFromQR(orderId) {
+  await acceptPickup(orderId);
+  document.getElementById('scan-result').innerHTML = '<div class="empty-state"><p>✅ Pickup confirmed! Check Active Deliveries.</p></div>';
+}
+
+async function lookupPickupCode() {
+  const code = document.getElementById('manual-pickup-code').value.trim();
+  if (!code || code.length !== 7) { showToast('Enter a valid 7-digit pickup code', 'warn'); return; }
+  const { data } = await _supabase.from('orders').select('*').eq('pickup_code', code).eq('status', 'packed');
+  const el = document.getElementById('manual-lookup-result');
+  if (!data?.length) { el.innerHTML = '<p style="color:red;margin-top:12px;">No packed order found for this code</p>'; return; }
+  const o = data[0];
+  el.innerHTML = `<div class="card mt-12"><p style="font-weight:700;">Order #${o.id.slice(0,8).toUpperCase()}</p><p>📍 ${o.address?.city} · ${fmtINR(o.total_amount)}</p><button class="btn btn-green btn-sm mt-8" onclick="acceptPickup('${o.id}');document.getElementById('manual-lookup-result').innerHTML='';">Accept & Pickup</button></div>`;
+}
+
+async function loadHistory() {
+  const { data } = await _supabase.from('orders').select('*').eq('delivery_partner_id', CU.id).order('created_at', { ascending: false });
+  const el = document.getElementById('history-list');
+  if (!data?.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><h3>No history yet</h3></div>'; return; }
+  el.innerHTML = data.map(o => `<div class="card mb-8 fade-in"><div class="flex-between"><div><span style="font-weight:700;">#${o.id.slice(0,8).toUpperCase()}</span><br><span style="font-size:13px;color:var(--text2);">📍 ${o.address?.city} · ${fmtDate(o.created_at)}</span></div><div style="text-align:right;">${statusBadge(o.status)}<br><span style="color:#f59e0b;font-weight:700;">${fmtINR(o.delivery_share || 0)}</span></div></div></div>`).join('');
+}
+
+async function loadEarnings() {
+  const { data } = await _supabase.from('orders').select('*').eq('delivery_partner_id', CU.id).eq('status', 'delivered');
+  const total = (data || []).reduce((s, o) => s + (o.delivery_share || 0), 0);
+  document.getElementById('dp-earnings-stats').innerHTML = `
+    <div class="stat-tile"><div class="stat-icon">💰</div><div class="stat-value">${fmtINR(total)}</div><div class="stat-label">Total Earned</div></div>
+    <div class="stat-tile"><div class="stat-icon">✅</div><div class="stat-value">${(data||[]).length}</div><div class="stat-label">Deliveries</div></div>`;
+  const el = document.getElementById('dp-earnings-list');
+  el.innerHTML = (data||[]).map(o => `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);"><div><div style="font-weight:600;">#${o.id.slice(0,8).toUpperCase()}</div><div style="font-size:12px;color:var(--text2);">${fmtDate(o.delivered_at)}</div></div><div style="color:#f59e0b;font-weight:700;">${fmtINR(o.delivery_share||0)}</div></div>`).join('') || '<p style="color:var(--text2);padding:20px;">No completed deliveries yet</p>';
+}
+
+async function loadDPProfile() {
+  document.getElementById('dp-name').value = CU.name || '';
+  document.getElementById('dp-phone').value = CU.phone || '';
+  document.getElementById('dp-alt-phone').value = CU.vehicle?.alt_phone || '';
+  document.getElementById('dp-address').value = CU.vehicle?.address || '';
+  document.getElementById('dp-vehicle-type').value = CU.vehicle?.type || 'motorcycle';
+  document.getElementById('dp-vehicle-no').value = CU.vehicle?.number || '';
+  document.getElementById('dp-vehicle-model').value = CU.vehicle?.model || '';
+  document.getElementById('dp-vehicle-color').value = CU.vehicle?.color || '';
+  document.getElementById('dp-dl-no').value = CU.vehicle?.dl_no || '';
+  document.getElementById('dp-dl-expiry').value = CU.vehicle?.dl_expiry || '';
+}
+
+async function saveDPPersonal() {
+  const { error } = await _supabase.from('profiles').update({ name: document.getElementById('dp-name').value, phone: document.getElementById('dp-phone').value }).eq('id', CU.id);
+  if (error) { showToast(error.message, 'error'); return; }
+  showToast('Personal info saved!', 'success');
+}
+
+async function saveDPVehicle() {
+  const vehicle = { type: document.getElementById('dp-vehicle-type').value, number: document.getElementById('dp-vehicle-no').value, model: document.getElementById('dp-vehicle-model').value, color: document.getElementById('dp-vehicle-color').value, dl_no: document.getElementById('dp-dl-no').value, dl_expiry: document.getElementById('dp-dl-expiry').value };
+  const { error } = await _supabase.from('profiles').update({ vehicle }).eq('id', CU.id);
+  if (error) { showToast(error.message, 'error'); return; }
+  CU.vehicle = vehicle;
+  showToast('Vehicle details saved!', 'success');
+}
+
+async function unlockDPBank() {
+  const pass = prompt('Enter password to unlock:');
+  if (!pass) return;
+  const { error } = await _supabase.auth.signInWithPassword({ email: CU.email, password: pass });
+  if (error) { showToast('Incorrect password', 'error'); return; }
+  document.getElementById('dp-bank-locked').style.display = 'none';
+  document.getElementById('dp-bank-form').style.display = 'block';
+  if (CU.bank) {
+    document.getElementById('dp-bank-holder').value = CU.bank.holder || '';
+    document.getElementById('dp-bank-acc').value = CU.bank.acc_no || '';
+    document.getElementById('dp-bank-ifsc').value = CU.bank.ifsc || '';
+    document.getElementById('dp-bank-upi').value = CU.bank.upi || '';
+  }
+}
+
+function lockDPBank() { document.getElementById('dp-bank-locked').style.display = 'block'; document.getElementById('dp-bank-form').style.display = 'none'; }
+
+function previewDPUPI() {
+  const upi = document.getElementById('dp-bank-upi').value.trim();
+  const wrap = document.getElementById('dp-upi-qr');
+  if (upi) { wrap.style.display = 'flex'; renderQR('dp-upi-qr', `upi://pay?pa=${upi}&pn=${encodeURIComponent(CU.name)}`, 140); }
+  else wrap.style.display = 'none';
+}
+
+async function saveDPBank() {
+  const acc = document.getElementById('dp-bank-acc').value;
+  const acc2 = document.getElementById('dp-bank-acc2').value;
+  if (acc !== acc2) { showToast('Account numbers do not match', 'error'); return; }
+  const bank = { holder: document.getElementById('dp-bank-holder').value, acc_no: acc, ifsc: document.getElementById('dp-bank-ifsc').value, upi: document.getElementById('dp-bank-upi').value };
+  const { error } = await _supabase.from('profiles').update({ bank }).eq('id', CU.id);
+  if (error) { showToast(error.message, 'error'); return; }
+  CU.bank = bank;
+  showToast('Bank details saved!', 'success');
+}
+
+async function changeDPPass() {
+  const cur = document.getElementById('dp-cur-pass').value;
+  const newp = document.getElementById('dp-new-pass').value;
+  const newp2 = document.getElementById('dp-new-pass2').value;
+  if (newp !== newp2) { showToast('Passwords do not match', 'error'); return; }
+  const { error: signErr } = await _supabase.auth.signInWithPassword({ email: CU.email, password: cur });
+  if (signErr) { showToast('Current password incorrect', 'error'); return; }
+  const { error } = await _supabase.auth.updateUser({ password: newp });
+  if (error) { showToast(error.message, 'error'); return; }
+  showToast('Password updated!', 'success');
+}
+</script>
+</body>
+</html>
