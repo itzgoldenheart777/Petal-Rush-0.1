@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#e91e8c"/>
+  <title>Shop — Petal Rush 🛒</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="stylesheet" href="css/shared.css"/>
+</head>
+<body>
+<div id="sidebarOverlay" class="sidebar-overlay"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <span style="font-size:28px;">🌸</span>
+    <span class="logo-text">Petal Rush</span>
+  </div>
+  <div class="sidebar-user">
+    <div class="sidebar-avatar" id="sb-avatar">B</div>
+    <div>
+      <div class="sidebar-name" id="sb-name">Loading...</div>
+      <div class="sidebar-role">Buyer</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" data-page="shop" onclick="showPage('shop')">
+      <span class="nav-icon">🛍️</span> Shop
+    </div>
+    <div class="nav-item" data-page="orders" onclick="showPage('orders')">
+      <span class="nav-icon">📦</span> My Orders
+      <span class="nav-badge" id="orders-badge"></span>
+    </div>
+    <div class="nav-item" data-page="reviews" onclick="showPage('reviews')">
+      <span class="nav-icon">⭐</span> Reviews
+    </div>
+    <div class="nav-item" data-page="profile" onclick="showPage('profile')">
+      <span class="nav-icon">👤</span> Profile
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="btn btn-ghost btn-sm" onclick="toggleDarkMode()"><span class="dark-toggle-icon">🌙</span></button>
+    <button class="btn btn-danger btn-sm" onclick="logout()">Sign Out</button>
+  </div>
+</aside>
+
+<div class="main-content">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <button onclick="toggleSidebar()" class="btn btn-ghost btn-sm" style="display:none" id="menu-btn">☰</button>
+    <span class="topbar-title">🛍️ Shop Flowers</span>
+    <div class="topbar-actions">
+      <button class="btn btn-primary btn-sm" onclick="openCart()" style="position:relative;">
+        🛒 Cart <span id="cart-count-top" style="background:white;color:var(--pink);border-radius:20px;padding:2px 6px;font-size:11px;font-weight:900;margin-left:4px;display:none;"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- SHOP PAGE -->
+  <div class="page active" id="page-shop">
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="🔍 Search flowers, bouquets..." oninput="filterProducts()"/>
+      <select onchange="filterProducts()" id="sort-select">
+        <option value="new">Newest</option>
+        <option value="price-asc">Price: Low to High</option>
+        <option value="price-desc">Price: High to Low</option>
+        <option value="rating">Top Rated</option>
+      </select>
+    </div>
+    <div class="cat-filters">
+      <button class="cat-btn active" onclick="setCat(this,'all')">🌷 All</button>
+      <button class="cat-btn" onclick="setCat(this,'roses')">🌹 Roses</button>
+      <button class="cat-btn" onclick="setCat(this,'lilies')">🌸 Lilies</button>
+      <button class="cat-btn" onclick="setCat(this,'bouquets')">💐 Bouquets</button>
+      <button class="cat-btn" onclick="setCat(this,'seasonal')">🌼 Seasonal</button>
+      <button class="cat-btn" onclick="setCat(this,'exotic')">🌺 Exotic</button>
+    </div>
+    <div id="products-grid" class="product-grid">
+      <div class="loading-state"><div class="spinner"></div><p>Loading fresh flowers...</p></div>
+    </div>
+  </div>
+
+  <!-- ORDERS PAGE -->
+  <div class="page" id="page-orders">
+    <div class="flex-between mb-16">
+      <h2 class="card-title">📦 My Orders</h2>
+      <div style="display:flex;gap:8px;">
+        <select id="order-filter" onchange="filterOrdersList()">
+          <option value="all">All Orders</option>
+          <option value="pending">Pending</option>
+          <option value="shipped">Shipped</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+    </div>
+    <div id="orders-list"><div class="loading-state"><div class="spinner"></div></div></div>
+  </div>
+
+  <!-- REVIEWS PAGE -->
+  <div class="page" id="page-reviews">
+    <h2 class="card-title mb-16">⭐ My Reviews</h2>
+    <div class="card mb-16">
+      <h3 style="font-weight:700;margin-bottom:16px;">Write a Review</h3>
+      <div class="form-group">
+        <label>Select Delivered Order</label>
+        <select id="review-order-select"><option value="">— Choose an order —</option></select>
+      </div>
+      <div class="form-group">
+        <label>Rating</label>
+        <div id="star-rating" style="display:flex;gap:6px;font-size:28px;cursor:pointer;">
+          <span onclick="setRating(1)" data-v="1">⭐</span>
+          <span onclick="setRating(2)" data-v="2">⭐</span>
+          <span onclick="setRating(3)" data-v="3">⭐</span>
+          <span onclick="setRating(4)" data-v="4">⭐</span>
+          <span onclick="setRating(5)" data-v="5">⭐</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Comment (optional)</label>
+        <textarea id="review-comment" rows="3" placeholder="Share your experience..."></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="submitReview()">Submit Review ⭐</button>
+    </div>
+    <div id="my-reviews-list"></div>
+  </div>
+
+  <!-- PROFILE PAGE -->
+  <div class="page" id="page-profile">
+    <h2 class="card-title mb-16">👤 My Profile</h2>
+    <div class="card mb-16" style="text-align:center;padding:32px;">
+      <div id="profile-photo-wrap" style="width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--pink-dark));margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:40px;color:white;overflow:hidden;cursor:pointer;" onclick="document.getElementById('photo-input').click()">
+        <span id="profile-initials">B</span>
+      </div>
+      <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="uploadPhoto(event)"/>
+      <p style="font-size:12px;color:var(--text2);">Click photo to change</p>
+    </div>
+
+    <div id="profile-tabs">
+      <div class="tab-group">
+        <button class="tab-btn" data-tab="personal">Personal Info</button>
+        <button class="tab-btn" data-tab="addresses">Addresses</button>
+        <button class="tab-btn" data-tab="security">Security</button>
+      </div>
+      <div class="tab-panel card" data-tab="personal">
+        <div class="form-row">
+          <div class="form-group"><label>Full Name</label><input type="text" id="p-name"/></div>
+          <div class="form-group"><label>Phone</label><input type="tel" id="p-phone"/></div>
+        </div>
+        <div class="form-group"><label>Email</label><input type="email" id="p-email" readonly style="opacity:.6;"/></div>
+        <button class="btn btn-primary" onclick="saveProfile()">Save Changes ✓</button>
+      </div>
+      <div class="tab-panel card" data-tab="addresses">
+        <div id="addresses-list" class="mb-16"></div>
+        <button class="btn btn-primary" onclick="openModal('addr-modal')">+ Add Address</button>
+      </div>
+      <div class="tab-panel card" data-tab="security">
+        <h3 style="font-weight:700;margin-bottom:16px;">Change Password</h3>
+        <div class="form-group"><label>Current Password</label><input type="password" id="cur-pass"/></div>
+        <div class="form-group"><label>New Password</label><input type="password" id="new-pass"/></div>
+        <div class="form-group"><label>Confirm New Password</label><input type="password" id="new-pass2"/></div>
+        <button class="btn btn-primary" onclick="changePassword()">Update Password 🔐</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="bn-items">
+    <div class="bn-item active" data-page="shop" onclick="showPage('shop')"><span class="bn-icon">🛍️</span>Shop</div>
+    <div class="bn-item" data-page="orders" onclick="showPage('orders')"><span class="bn-icon">📦</span>Orders<span class="bn-badge" id="orders-bn-badge"></span></div>
+    <div class="bn-item" onclick="openCart()" style="position:relative;"><span class="bn-icon">🛒</span>Cart<span class="bn-badge show" id="cart-bn-badge" style="display:none;"></span></div>
+    <div class="bn-item" data-page="profile" onclick="showPage('profile')"><span class="bn-icon">👤</span>Profile</div>
+  </div>
+</nav>
+
+<!-- CART PANEL -->
+<div class="cart-panel" id="cart-panel">
+  <div class="cart-panel-header">
+    <h3 style="font-weight:700;font-size:18px;">🛒 Your Cart</h3>
+    <button class="modal-close" onclick="closeCart()">✕</button>
+  </div>
+  <div class="cart-panel-body" id="cart-body"></div>
+  <div class="cart-panel-footer" id="cart-footer"></div>
+</div>
+<div id="cart-overlay" onclick="closeCart()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:499;"></div>
+
+<!-- Address Modal -->
+<div class="modal" id="addr-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">Add Address</span>
+      <button class="modal-close" onclick="closeModal('addr-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>Label (Home/Work)</label><input type="text" id="addr-label" placeholder="Home"/></div>
+        <div class="form-group"><label>City</label><input type="text" id="addr-city"/></div>
+      </div>
+      <div class="form-group"><label>Full Address</label><textarea id="addr-text" rows="2"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>PIN Code</label><input type="text" id="addr-pin"/></div>
+        <div class="form-group"><label>State</label><input type="text" id="addr-state"/></div>
+      </div>
+      <button class="btn btn-ghost btn-sm mb-8" onclick="getGPS()">📍 Use My Location</button>
+      <div class="form-row">
+        <div class="form-group"><label>Latitude</label><input type="number" id="addr-lat" step="any"/></div>
+        <div class="form-group"><label>Longitude</label><input type="number" id="addr-lng" step="any"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addr-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAddress()">Save Address</button>
+    </div>
+  </div>
+</div>
+
+<!-- Track Order Modal -->
+<div class="modal" id="track-modal">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-header">
+      <span class="modal-title">Track Order</span>
+      <button class="modal-close" onclick="closeModal('track-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="track-body"></div>
+  </div>
+</div>
+
+<!-- Invoice Modal -->
+<div class="modal" id="invoice-modal">
+  <div class="modal-box" style="max-width:640px;">
+    <div class="modal-header">
+      <span class="modal-title">Invoice</span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-green btn-sm" onclick="downloadInvoicePDF()">Print/PDF</button>
+        <button class="btn btn-outline btn-sm" onclick="downloadInvoicePNG()">PNG</button>
+        <button class="modal-close" onclick="closeModal('invoice-modal')">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="invoice-body"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/shared.js"></script>
+<script>
+let CU = null;
+let allProducts = [];
+let cart = JSON.parse(localStorage.getItem('pr_cart') || '[]');
+let allMyOrders = [];
+let selectedRating = 0;
+let activeCat = 'all';
+
+// ---- INIT ----
+window.addEventListener('DOMContentLoaded', async () => {
+  CU = await requireRole('buyer');
+  if (!CU) return;
+  document.getElementById('sb-name').textContent = CU.name;
+  document.getElementById('sb-avatar').textContent = CU.name?.charAt(0)?.toUpperCase() || 'B';
+  document.getElementById('menu-btn').style.display = 'flex';
+  updateCartBadge();
+  await loadProducts();
+  initTabs('profile-tabs');
+
+  // Realtime
+  subscribeToOrders(CU.id, 'buyer', () => { if (document.getElementById('page-orders').classList.contains('active')) loadOrders(); });
+});
+
+window.onPageShow_orders = loadOrders;
+window.onPageShow_reviews = loadReviewPage;
+window.onPageShow_profile = loadProfile;
+
+// ---- SHOP ----
+async function loadProducts() {
+  const { data, error } = await _supabase.from('products').select('*').eq('is_active', true).gt('stock', 0).order('created_at', { ascending: false });
+  if (error) { showToast('Failed to load products', 'error'); return; }
+  allProducts = data || [];
+  filterProducts();
+}
+
+function filterProducts() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const sort = document.getElementById('sort-select').value;
+  let list = allProducts.filter(p => {
+    const matchCat = activeCat === 'all' || p.category === activeCat;
+    const matchQ = !q || p.name.toLowerCase().includes(q) || (p.store_name || '').toLowerCase().includes(q);
+    return matchCat && matchQ;
+  });
+  if (sort === 'price-asc') list.sort((a,b) => a.price - b.price);
+  else if (sort === 'price-desc') list.sort((a,b) => b.price - a.price);
+  else if (sort === 'rating') list.sort((a,b) => b.rating - a.rating);
+  renderProducts(list);
+}
+
+function setCat(btn, cat) {
+  activeCat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterProducts();
+}
+
+function renderProducts(list) {
+  const grid = document.getElementById('products-grid');
+  if (!list.length) { grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-icon">🌷</div><h3>No flowers found</h3><p>Try a different search or category</p></div>`; return; }
+  grid.innerHTML = list.map(p => {
+    const img = p.images?.[0] || '';
+    const stars = '⭐'.repeat(Math.round(p.rating || 0));
+    return `<div class="product-card fade-in" onclick="addToCart('${p.id}')">
+      <div class="product-card-img">${img ? `<img src="${img}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;">` : catEmoji(p.category)}</div>
+      <div class="product-card-body">
+        <div class="product-card-name">${p.name}</div>
+        <div class="product-card-store">🏪 ${p.store_name || p.seller_name}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+          <div class="product-card-price">${fmtINR(p.price)}</div>
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();addToCart('${p.id}')">+ Cart</button>
+        </div>
+        <div class="product-card-rating">${stars || '☆☆☆☆☆'} <span style="color:var(--text2);font-size:11px;">(${p.review_count||0})</span></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:4px;">Stock: ${p.stock}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ---- CART ----
+function addToCart(id) {
+  const p = allProducts.find(x => x.id === id);
+  if (!p) return;
+  const i = cart.findIndex(x => x.id === id);
+  if (i >= 0) cart[i].qty++;
+  else cart.push({ id: p.id, name: p.name, price: p.price, qty: 1, image: p.images?.[0] || '', seller_id: p.seller_id, seller_name: p.seller_name, store_name: p.store_name, category: p.category });
+  saveCart();
+  showToast(`${p.name} added to cart 🌸`, 'success');
+}
+
+function saveCart() { localStorage.setItem('pr_cart', JSON.stringify(cart)); updateCartBadge(); }
+
+function updateCartBadge() {
+  const count = cart.reduce((s, i) => s + i.qty, 0);
+  ['cart-count-top', 'cart-bn-badge'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = count;
+    el.style.display = count ? 'inline-block' : 'none';
+  });
+}
+
+function openCart() {
+  renderCartBody();
+  document.getElementById('cart-panel').classList.add('open');
+  document.getElementById('cart-overlay').style.display = 'block';
+}
+
+function closeCart() {
+  document.getElementById('cart-panel').classList.remove('open');
+  document.getElementById('cart-overlay').style.display = 'none';
+}
+
+function renderCartBody() {
+  const body = document.getElementById('cart-body');
+  const footer = document.getElementById('cart-footer');
+  if (!cart.length) {
+    body.innerHTML = `<div class="empty-state"><div class="empty-icon">🛒</div><h3>Cart is empty</h3><p>Add some flowers!</p></div>`;
+    footer.innerHTML = '';
+    return;
+  }
+  const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  body.innerHTML = cart.map((item, idx) => `
+    <div class="cart-item">
+      <div class="cart-item-img">${item.image ? `<img src="${item.image}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--radius-sm);">` : catEmoji(item.category)}</div>
+      <div class="cart-item-info">
+        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-price">${fmtINR(item.price)}</div>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="chQty(${idx},-1)">−</button>
+          <span class="qty-val">${item.qty}</span>
+          <button class="qty-btn" onclick="chQty(${idx},1)">+</button>
+          <button class="btn btn-danger btn-sm" style="margin-left:auto;" onclick="removeCart(${idx})">🗑</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  const addresses = CU?.addresses || [];
+  footer.innerHTML = `
+    <div style="display:flex;justify-content:space-between;font-weight:800;font-size:18px;color:var(--pink);margin-bottom:16px;">
+      <span>Total</span><span>${fmtINR(total)}</span>
+    </div>
+    ${addresses.length ? `
+      <div class="form-group">
+        <label>Deliver to</label>
+        <select id="checkout-addr">
+          ${addresses.map((a,i) => `<option value="${i}">${a.label}: ${a.text?.substring(0,40)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Payment Mode</label>
+        <select id="checkout-mode">
+          <option value="cod">Cash on Delivery</option>
+          <option value="upi">UPI</option>
+          <option value="card">Card</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="checkout()">Place Order 🌸</button>
+    ` : `
+      <p style="color:var(--text2);font-size:13px;margin-bottom:12px;">Add a delivery address first</p>
+      <button class="btn btn-outline btn-full" onclick="closeCart();showPage('profile')">Add Address</button>
+    `}
+  `;
+}
+
+function chQty(i, d) {
+  cart[i].qty += d;
+  if (cart[i].qty <= 0) cart.splice(i, 1);
+  saveCart(); renderCartBody();
+}
+
+function removeCart(i) { cart.splice(i, 1); saveCart(); renderCartBody(); }
+
+async function checkout() {
+  if (!cart.length) { showToast('Cart is empty', 'warn'); return; }
+  const addrIdx = parseInt(document.getElementById('checkout-addr')?.value || '0');
+  const mode = document.getElementById('checkout-mode')?.value || 'cod';
+  const address = CU.addresses?.[addrIdx];
+  if (!address) { showToast('Select a delivery address', 'warn'); return; }
+
+  // Group by seller
+  const groups = {};
+  cart.forEach(item => {
+    if (!groups[item.seller_id]) groups[item.seller_id] = { seller_id: item.seller_id, seller_name: item.seller_name, items: [] };
+    groups[item.seller_id].items.push(item);
+  });
+
+  let successCount = 0;
+  for (const group of Object.values(groups)) {
+    const total = group.items.reduce((s, i) => s + i.price * i.qty, 0);
+    const split = calcSplit(total);
+    const deliveryCode = genCode(6);
+    const estDelivery = new Date(Date.now() + 20 * 60 * 1000).toISOString();
+    const { data: order, error } = await _supabase.from('orders').insert({
+      user_id: CU.id, seller_id: group.seller_id, products: group.items,
+      total_amount: total, status: 'pending', payment_mode: mode,
+      address, delivery_code: deliveryCode, ...split, estimated_delivery: estDelivery
+    }).select().single();
+    if (error) { showToast(`Order failed: ${error.message}`, 'error'); continue; }
+    await _supabase.from('payments').insert({
+      order_id: order.id, seller_id: group.seller_id, ...split, total_amount: total, status: 'pending'
+    });
+    successCount++;
+  }
+
+  if (successCount > 0) {
+    cart = []; saveCart();
+    closeCart();
+    showToast(`${successCount} order(s) placed! 🌸`, 'success');
+    showPage('orders');
+  }
+}
+
+// ---- ORDERS ----
+async function loadOrders() {
+  const { data, error } = await _supabase.from('orders').select('*').eq('user_id', CU.id).order('created_at', { ascending: false });
+  if (error) { showToast('Failed to load orders', 'error'); return; }
+  allMyOrders = data || [];
+  const pendingCount = allMyOrders.filter(o => ['pending','confirmed','packed','shipped'].includes(o.status)).length;
+  ['orders-badge', 'orders-bn-badge'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = pendingCount; el.classList.toggle('show', pendingCount > 0); }
+  });
+  // Populate review selector
+  const sel = document.getElementById('review-order-select');
+  if (sel) {
+    const delivered = allMyOrders.filter(o => o.status === 'delivered');
+    sel.innerHTML = '<option value="">— Choose an order —</option>' + delivered.map(o => `<option value="${o.id}">Order #${o.id.slice(0,8)} · ${fmtDate(o.created_at)}</option>`).join('');
+  }
+  filterOrdersList();
+}
+
+function filterOrdersList() {
+  const filter = document.getElementById('order-filter')?.value || 'all';
+  const list = filter === 'all' ? allMyOrders : allMyOrders.filter(o => o.status === filter);
+  renderOrderCards(list);
+}
+
+function renderOrderCards(orders) {
+  const el = document.getElementById('orders-list');
+  if (!orders.length) { el.innerHTML = `<div class="empty-state"><div class="empty-icon">📦</div><h3>No orders yet</h3><p>Start shopping to place your first order!</p></div>`; return; }
+  el.innerHTML = orders.map(o => {
+    const prods = Array.isArray(o.products) ? o.products : [];
+    return `<div class="order-card fade-in">
+      <div class="flex-between mb-8">
+        <div>
+          <span style="font-weight:700;font-family:'Playfair Display',serif;">Order #${o.id.slice(0,8).toUpperCase()}</span>
+          <span style="color:var(--text2);font-size:13px;margin-left:12px;">${fmtDate(o.created_at)}</span>
+        </div>
+        ${statusBadge(o.status)}
+      </div>
+      ${orderProgressBar(o.status)}
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;">
+        ${prods.map(p => `<span style="background:var(--pink-light);color:var(--pink-dark);padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;">${p.name} ×${p.qty}</span>`).join('')}
+      </div>
+      <div class="flex-between mt-8">
+        <span style="font-size:20px;font-weight:800;color:var(--pink);font-family:'Playfair Display',serif;">${fmtINR(o.total_amount)}</span>
+        <span style="font-size:12px;color:var(--text2);">💳 ${cap(o.payment_mode)}</span>
+      </div>
+      ${o.status === 'shipped' ? `<div class="qr-wrap mt-16" style="max-width:200px;"><p style="font-size:12px;font-weight:700;color:var(--pink);margin-bottom:8px;">Your Delivery Code (show to rider)</p><div id="qr-${o.id}"></div><div class="qr-code-label">${o.delivery_code}</div></div>` : ''}
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" onclick="trackOrder('${o.id}')">📍 Track</button>
+        <button class="btn btn-ghost btn-sm" onclick="showInvoice('${o.id}')">🧾 Invoice</button>
+        ${o.status === 'delivered' ? `<button class="btn btn-primary btn-sm" onclick="showPage('reviews')">⭐ Review</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  // Render QR codes
+  orders.filter(o => o.status === 'shipped').forEach(o => {
+    setTimeout(() => renderQR(`qr-${o.id}`, o.delivery_code, 120), 100);
+  });
+}
+
+async function trackOrder(orderId) {
+  const { data: o } = await _supabase.from('orders').select('*').eq('id', orderId).single();
+  const body = document.getElementById('track-body');
+  body.innerHTML = `
+    <div style="margin-bottom:20px;">${orderProgressBar(o.status)}</div>
+    <div class="grid-2 mb-16">
+      <div><span style="color:var(--text2);font-size:12px;">ORDER ID</span><p style="font-weight:700;">#${o.id.slice(0,8).toUpperCase()}</p></div>
+      <div><span style="color:var(--text2);font-size:12px;">PLACED</span><p style="font-weight:700;">${fmtDateTime(o.created_at)}</p></div>
+      <div><span style="color:var(--text2);font-size:12px;">STATUS</span><p>${statusBadge(o.status)}</p></div>
+      <div><span style="color:var(--text2);font-size:12px;">ESTIMATED</span><p style="font-weight:700;" id="countdown-${o.id}">—</p></div>
+    </div>
+    <div style="background:var(--pink-light);border-radius:var(--radius);padding:16px;">
+      <p style="font-size:12px;color:var(--text2);font-weight:700;margin-bottom:4px;">Delivery Address</p>
+      <p>${o.address?.text}, ${o.address?.city} — ${o.address?.pin}</p>
+    </div>
+    ${o.status === 'shipped' ? `<div class="qr-wrap mt-16"><p style="font-weight:700;color:var(--pink);">Show this to delivery partner</p><div id="track-qr"></div><div class="qr-code-label">${o.delivery_code}</div></div>` : ''}
+  `;
+  if (o.estimated_delivery) startCountdown(o.estimated_delivery, `countdown-${o.id}`);
+  if (o.status === 'shipped') setTimeout(() => renderQR('track-qr', o.delivery_code, 160), 100);
+  openModal('track-modal');
+}
+
+async function showInvoice(orderId) {
+  const { data: o } = await _supabase.from('orders').select('*').eq('id', orderId).single();
+  document.getElementById('invoice-body').innerHTML = buildInvoiceHTML(o, CU);
+  openModal('invoice-modal');
+}
+
+function downloadInvoicePDF() {
+  const w = window.open('', '_blank');
+  w.document.write(`<html><body>${document.getElementById('invoice-body').innerHTML}</body></html>`);
+  w.document.close();
+  w.print();
+}
+
+async function downloadInvoicePNG() {
+  const el = document.getElementById('invoice-content');
+  if (!el) return;
+  const canvas = await html2canvas(el, { scale: 2 });
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = 'petal-rush-invoice.png';
+  a.click();
+}
+
+// ---- REVIEWS ----
+let selectedRating = 0;
+
+function setRating(v) {
+  selectedRating = v;
+  document.querySelectorAll('#star-rating span').forEach((el, i) => { el.style.opacity = i < v ? '1' : '.3'; });
+}
+
+async function submitReview() {
+  const orderId = document.getElementById('review-order-select').value;
+  const comment = document.getElementById('review-comment').value;
+  if (!orderId) { showToast('Select an order', 'warn'); return; }
+  if (!selectedRating) { showToast('Select a rating', 'warn'); return; }
+  const { error } = await _supabase.from('reviews').insert({ user_id: CU.id, user_name: CU.name, order_id: orderId, rating: selectedRating, comment });
+  if (error) { showToast('Failed to submit review', 'error'); return; }
+  showToast('Review submitted! Thank you 🌸', 'success');
+  selectedRating = 0;
+  document.getElementById('review-comment').value = '';
+  document.getElementById('review-order-select').value = '';
+  document.querySelectorAll('#star-rating span').forEach(el => el.style.opacity = '1');
+  loadReviewPage();
+}
+
+async function loadReviewPage() {
+  await loadOrders();
+  const { data } = await _supabase.from('reviews').select('*').eq('user_id', CU.id).order('created_at', { ascending: false });
+  const el = document.getElementById('my-reviews-list');
+  if (!data?.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">⭐</div><h3>No reviews yet</h3></div>'; return; }
+  el.innerHTML = `<h3 style="font-weight:700;margin-bottom:12px;">Your Past Reviews</h3>` + data.map(r => `
+    <div class="card mb-8">
+      <div class="flex-between">
+        <span style="font-size:18px;">${'⭐'.repeat(r.rating)}</span>
+        <span style="font-size:12px;color:var(--text2);">${fmtDate(r.created_at)}</span>
+      </div>
+      <p style="margin-top:8px;font-size:14px;">${r.comment || '—'}</p>
+    </div>`).join('');
+}
+
+// ---- PROFILE ----
+async function loadProfile() {
+  if (!CU) return;
+  document.getElementById('p-name').value = CU.name || '';
+  document.getElementById('p-phone').value = CU.phone || '';
+  document.getElementById('p-email').value = CU.email || '';
+  const initials = CU.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2) || 'B';
+  document.getElementById('profile-initials').textContent = initials;
+  renderAddresses();
+}
+
+function renderAddresses() {
+  const el = document.getElementById('addresses-list');
+  const addrs = CU?.addresses || [];
+  if (!addrs.length) { el.innerHTML = '<p style="color:var(--text2);font-size:14px;">No addresses saved yet.</p>'; return; }
+  el.innerHTML = addrs.map((a, i) => `
+    <div class="card mb-8" style="padding:14px;">
+      <div class="flex-between">
+        <div>
+          <span style="font-weight:700;">${a.label}</span>
+          ${i === 0 ? `<span style="background:var(--pink);color:white;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;margin-left:8px;">Primary</span>` : ''}
+          <p style="font-size:13px;color:var(--text2);margin-top:4px;">${a.text}, ${a.city} — ${a.pin}</p>
+        </div>
+        <div style="display:flex;gap:6px;">
+          ${i > 0 ? `<button class="btn btn-ghost btn-sm" onclick="setPrimaryAddr(${i})">Set Primary</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteAddr(${i})">🗑</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function saveProfile() {
+  const name = document.getElementById('p-name').value.trim();
+  const phone = document.getElementById('p-phone').value.trim();
+  const { error } = await _supabase.from('profiles').update({ name, phone }).eq('id', CU.id);
+  if (error) { showToast('Failed to save', 'error'); return; }
+  CU.name = name; CU.phone = phone;
+  document.getElementById('sb-name').textContent = name;
+  showToast('Profile saved! 🌸', 'success');
+}
+
+async function uploadPhoto(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  showToast('Uploading photo...', 'info');
+  const url = await uploadFile(file, 'profile-photos', `${CU.id}/profile_${Date.now()}`);
+  await _supabase.from('profiles').update({ photo_url: url }).eq('id', CU.id);
+  CU.photo_url = url;
+  const wrap = document.getElementById('profile-photo-wrap');
+  wrap.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;" onclick="document.getElementById('photo-input').click()">`;
+  showToast('Photo updated! 🌸', 'success');
+}
+
+async function saveAddress() {
+  const addresses = CU.addresses || [];
+  if (addresses.length >= 3) { showToast('Maximum 3 addresses allowed', 'warn'); return; }
+  const label = document.getElementById('addr-label').value.trim() || 'Home';
+  const text = document.getElementById('addr-text').value.trim();
+  const city = document.getElementById('addr-city').value.trim();
+  const pin = document.getElementById('addr-pin').value.trim();
+  const state = document.getElementById('addr-state').value.trim();
+  const lat = document.getElementById('addr-lat').value;
+  const lng = document.getElementById('addr-lng').value;
+  if (!text || !city) { showToast('Fill address and city', 'warn'); return; }
+  addresses.push({ label, text, city, pin, state, lat: parseFloat(lat)||null, lng: parseFloat(lng)||null });
+  const { error } = await _supabase.from('profiles').update({ addresses }).eq('id', CU.id);
+  if (error) { showToast('Failed to save address', 'error'); return; }
+  CU.addresses = addresses;
+  closeModal('addr-modal');
+  renderAddresses();
+  showToast('Address added!', 'success');
+}
+
+async function setPrimaryAddr(i) {
+  const addresses = [...(CU.addresses || [])];
+  const [item] = addresses.splice(i, 1);
+  addresses.unshift(item);
+  await _supabase.from('profiles').update({ addresses }).eq('id', CU.id);
+  CU.addresses = addresses;
+  renderAddresses();
+}
+
+async function deleteAddr(i) {
+  if (!confirm('Delete this address?')) return;
+  const addresses = [...(CU.addresses || [])];
+  addresses.splice(i, 1);
+  await _supabase.from('profiles').update({ addresses }).eq('id', CU.id);
+  CU.addresses = addresses;
+  renderAddresses();
+}
+
+function getGPS() {
+  navigator.geolocation.getCurrentPosition(pos => {
+    document.getElementById('addr-lat').value = pos.coords.latitude.toFixed(6);
+    document.getElementById('addr-lng').value = pos.coords.longitude.toFixed(6);
+    showToast('Location captured!', 'success');
+  }, () => showToast('Could not get location', 'warn'));
+}
+
+async function changePassword() {
+  const cur = document.getElementById('cur-pass').value;
+  const newp = document.getElementById('new-pass').value;
+  const newp2 = document.getElementById('new-pass2').value;
+  if (!cur || !newp) { showToast('Fill all fields', 'warn'); return; }
+  if (newp !== newp2) { showToast('Passwords do not match', 'error'); return; }
+  // Re-authenticate
+  const { data: { user } } = await _supabase.auth.getUser();
+  const { error: signErr } = await _supabase.auth.signInWithPassword({ email: CU.email, password: cur });
+  if (signErr) { showToast('Current password incorrect', 'error'); return; }
+  const { error } = await _supabase.auth.updateUser({ password: newp });
+  if (error) { showToast(error.message, 'error'); return; }
+  showToast('Password updated! 🔐', 'success');
+  ['cur-pass','new-pass','new-pass2'].forEach(id => document.getElementById(id).value = '');
+}
+</script>
+</body>
+</html>
